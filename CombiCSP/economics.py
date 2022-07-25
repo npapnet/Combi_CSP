@@ -207,7 +207,6 @@ class Economic_environment():
             csp_energy_price,
             csp_discount_rate,
             power_block_cost,
-            capital_csp,
         lifetime=range(30)):
         """This function performs an economic analysis on the performance output of a csp
 
@@ -228,9 +227,7 @@ class Economic_environment():
         cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in lifetime]
         dpb_tow = discounted_payback_period(csp_discount_rate, cash_flow_tow)
         npv_csp_tow = npf.npv (csp_discount_rate, [-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
-        irr_csp_tow = npf.irr([-capital_csp] + [revenue_csp_tow for i in lifetime])
-        # TODO in the above line I should replace  {`capital_csp` -> `capital_csp_tow`}
-        # irr_csp_tow = npf.irr([-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
+        irr_csp_tow = npf.irr([-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
         return {
             'A_helio': oTow.A_helio,
             'cash_flow':cash_flow_tow,
@@ -252,13 +249,11 @@ class Economic_environment():
         output of a csp
 
         Args:
-            oTow (OutputContainer): references the trough object
+            oTr (OutputContainer): references the trough object
             csp_area_costs (_type_): csp area costs
             csp_energy_price (_type_): energy prices
             csp_discount_rate (_type_): discount rate
             power_block_cost (_type_): cost of the power block
-            Eoil (float): Oil price
-            oil_price (_type_): _description_
             lifetime (_type_, optional): _description_. Defaults to range(30).
 
         Returns:
@@ -269,8 +264,8 @@ class Economic_environment():
 
         cash_flow_tro = [-capital_csp_tro] + [revenue_csp_tro for i in lifetime]
         dpb_tro = discounted_payback_period(csp_discount_rate, cash_flow_tro)
-        npv_csp_tro = npf.npv(csp_discount_rate, [-capital_csp_tro] \
-            + [revenue_csp_tro for i in lifetime])
+        npv_csp_tro = npf.npv(csp_discount_rate, \
+            [-capital_csp_tro] + [revenue_csp_tro for i in lifetime])
         irr_csp_tro = npf.irr([-capital_csp_tro] \
             + [revenue_csp_tro for i in lifetime])
         return {
@@ -281,4 +276,50 @@ class Economic_environment():
                         oTr.CF, dpb_tro, 
                         npv_csp_tro, irr_csp_tro, 
                         cash_flow_tro)}
+
+    def economics_for_Combination(self, 
+        oTow:OutputContainer,
+        oTr:OutputContainer,
+        csp_area_costs,
+        csp_energy_price,
+        csp_discount_rate,
+        power_block_cost,
+        lifetime=range(30)):
+        """This function performs an economic analysis on the performance 
+        output of a csp combination TOWER + TROUGH
+
+        Args:
+            oTow (OutputContainer): references the tower object
+            oTr (OutputContainer): references the trough object
+            csp_area_costs (_type_): csp area costs
+            csp_energy_price (_type_): energy prices
+            csp_discount_rate (_type_): discount rate
+            power_block_cost (_type_): cost of the power block
+            lifetime (_type_, optional): investment lifetime. Defaults to range(30).
+
+        Returns:
+            _type_: _description_
+        """    
+        Area_total = oTr.A_helio+oTow.A_helio
+        PcombiNS = (oTr.data + oTow.data).max()
+        EcombiNS = oTr.Energy_MWh + oTow.Energy_MWh
+        
+        capital_combiNS = (Area_total)*csp_area_costs + PcombiNS*power_block_cost
+        revenue_combiNS = cashflow(EcombiNS,csp_energy_price,self._Eoil,eff=0.4,fuel_price=-self._oil_price,capital=capital_combiNS)
+        cash_flow_combiNS = [-capital_combiNS] + [revenue_combiNS for i in lifetime]
+        dpb_combiNS = discounted_payback_period(csp_discount_rate, cash_flow_combiNS)
+        npv_combiNS = npf.npv(csp_discount_rate, \
+            [-capital_combiNS] + [revenue_combiNS for i in lifetime])
+        irr_combiNS = npf.irr(
+            [-capital_combiNS] + [revenue_combiNS for i in lifetime])
+
+        return {
+            'A_helio': Area_total,
+            'cash_flow':cash_flow_combiNS,
+            'scenaria': (Area_total, None, 
+                        PcombiNS, EcombiNS,
+                        None, 
+                        dpb_combiNS, 
+                        npv_combiNS, irr_combiNS, 
+                        cash_flow_combiNS)}
 # %%

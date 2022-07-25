@@ -42,7 +42,7 @@ FNAME = pathlib.Path('example_data/tmy_35.015_25.755_2005_2020.csv')
 pvgis_data = pd.read_csv(FNAME, header=16, nrows=8776-16, parse_dates=['time(UTC)'], engine='python') #Atherinolakos
 Ib = pvgis_data.loc[:,'Gb(n)']
 #Ib = ineichen().dni
-capital_csp = 5000000
+# capital_csp = 5000000 # this is obsolete because its calculated from the characteristics of the systems
 
 
 # Tower dimensions
@@ -71,7 +71,7 @@ for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10
     cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in range(30)]
     dpb_tow = cspe.discounted_payback_period(csp_discount_rate, cash_flow_tow)
     npv_csp_tow = npf.npv(csp_discount_rate, [-capital_csp_tow] + [cspe.cashflow(Etower,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tow) for i in range(30)])
-    irr_csp_tow = npf.irr([-capital_csp] + [cspe.cashflow(Etower,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tow) for i in range(30)])
+    irr_csp_tow = npf.irr([-capital_csp_tow] + [cspe.cashflow(Etower,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tow) for i in range(30)])
     area_list.append(A_helio)
     cash_flow_list.append(cash_flow_tow)
     tow_scenaria.append((A_helio,Ctow,Ptower,Etower,CF_tow,dpb_tow,npv_csp_tow,irr_csp_tow,cash_flow_tow))
@@ -116,7 +116,7 @@ for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10
             csp_energy_price=csp_energy_price,
             csp_discount_rate= csp_discount_rate,
             power_block_cost=power_block_cost,
-            capital_csp=capital_csp,
+            # capital_csp=capital_csp,
         lifetime=range(30))
     area_list3.append(tmp_res_Dic['A_helio'] )
     cash_flow_list3.append(tmp_res_Dic['cash_flow'])
@@ -261,7 +261,7 @@ cash_flow_combiNS = [-capital_combiNS] + [revenue_combiNS for i in range(30)]
 dpb_combiNS = cspe.discounted_payback_period(csp_discount_rate, cash_flow_combiNS)
 npv_combiNS = npf.npv(csp_discount_rate, [-capital_combiNS] \
     + [cspe.cashflow(EcombiNS,csp_energy_price,Eoil,0.4,-oil_price,capital_combiNS) for i in range(30)])
-irr_combiNS = npf.irr([-capital_csp] \
+irr_combiNS = npf.irr([-capital_combiNS] \
     + [cspe.cashflow(EcombiNS,csp_energy_price,Eoil,0.4,-oil_price,capital_combiNS) for i in range(30)])
 
 
@@ -278,14 +278,36 @@ oTr = strc_opt.perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
 combiNS_np = (oTow.data + oTr.data).values
 combiNS_xyz_np = np.vstack(combiNS_np).reshape((365,24))
 
+tmp_res_Dic =ee.economics_for_Combination(
+        oTr= oTr,
+        oTow = oTow,
+        csp_area_costs= csp_area_costs,
+        csp_energy_price=csp_energy_price,
+        csp_discount_rate= csp_discount_rate,
+        power_block_cost=power_block_cost,
+        # capital_csp= capital_csp,
+        lifetime=range(30))
 
 #%% Assertions 
 np.testing.assert_equal(combiNS, combiNS_np) 
 np.testing.assert_equal(combiNS_xyz, combiNS_xyz_np) 
 assert area_combiNS == oTr.A_helio
+assert PcombiNS == (oTr.data + oTow.data).max()
+assert EcombiNS == (oTr.Energy_MWh + oTow.Energy_MWh).round(2)
 
+assert (A_helio_optNS+area_combiNS) == tmp_res_Dic['A_helio']
+np.testing.assert_equal( cash_flow_combiNS,  tmp_res_Dic['cash_flow'])
+assert (A_helio_optNS+area_combiNS) ==  tmp_res_Dic['scenaria'][0]
+assert   tmp_res_Dic['scenaria'][1] is None
+assert   PcombiNS == tmp_res_Dic['scenaria'][2] , 'Max Power '
+assert   EcombiNS == tmp_res_Dic['scenaria'][3].round(2) , 'Total Energy Yield '
+assert   tmp_res_Dic['scenaria'][4] is None , 'Capacity Factor '
+assert   tmp_res_Dic['scenaria'][5] == dpb_combiNS , 'discounted payback '
+assert   tmp_res_Dic['scenaria'][6] == npv_combiNS , 'net present value'
+assert   tmp_res_Dic['scenaria'][7] == irr_combiNS , 'internal rate of return'
+np.testing.assert_equal( cash_flow_combiNS,  tmp_res_Dic['scenaria'][8])
 print('tests between original code and OOP completed without problems')
-#%% 
+#%% ========================================================================
 # # T+EW optimum
 # A_helio_optEW = 125000
 # N_opt_EW = 800
