@@ -9,13 +9,12 @@
 import numpy as np
 
 from CombiCSP import HOYS_DEFAULT
-import CombiCSP.SolarGeometry as sgh
-from CombiCSP.SolarGeometry import z
+from CombiCSP import solar_system_location
 
 
 #%%  ================================================= Transmittance
 # the following functions relate to the [heliostats](https://www.nrel.gov/csp/heliocon.html) 
-def Tr23km(alt, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes winter
+def Tr23km(alt, ssloc:solar_system_location, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes winter
 
     '''H.C. Hottel, A simple model for estimating the transmittance of direct solar radiation through clear atmospheres, 
     Solar Energy. 18 (1976) 129–134.'''
@@ -23,11 +22,11 @@ def Tr23km(alt, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes wint
     a1 = 1.01 * (0.5055 + 0.00595 * (6.5 - alt)**2) #0.7559
     k = 1.00 * (0.2711 + 0.01858 * (2.5 - alt)**2) #-0.3878
     #TODO NP: The correct function accordint to the paper should be:
-    # return a0 + a1 * np.exp(-k/np.cos(z(hoy)))
-    return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(z(hoy)))) # needs rad despite z(hoy) already in rad???
+    return a0 + a1 * np.exp(-k/np.cos(ssloc.z(hoy)))
+    # return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(ssloc.z(hoy)))) # needs rad despite z(hoy) already in rad???
 
 
-def Tr5km(alt, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes winter
+def Tr5km(alt,ssloc:solar_system_location, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes winter
     '''H.C. Hottel, A simple model for estimating the transmittance of direct solar radiation through clear atmospheres, 
     Solar Energy. 18 (1976) 129–134.'''
     a0 = 1.04*(0.2538-0.0063*(6-alt)**2)
@@ -35,7 +34,7 @@ def Tr5km(alt, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes winte
     k = 1.00*(0.2490+0.0810*(2.5-alt)**2)
     #TODO NP: The correct function accordint to the paper should be:
     # return a0 + a1 * np.exp(-k/np.cos(z(hoy)))
-    return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(z(hoy)))) # needs rad despite z(hoy) already in rad???
+    return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(ssloc.z(hoy)))) # needs rad despite z(hoy) already in rad???
 
 def TrD23km(R): 
     """transmmitance at 23km 
@@ -102,3 +101,4 @@ def TrVH(Ht,R,alt): #V_H transmittance model [all units in km]
     C = (0.0105 * rho_w + 0.724) * (b - 0.0037)**S
     ks = C * np.exp(-A * Ht) # broadband extinction coefficient between tower and receiver atop [km-S]
     return np.exp(-ks * R**S) # R slant range in [km]
+# %%

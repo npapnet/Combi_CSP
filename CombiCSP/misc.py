@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import CombiCSP.SolarGeometry as sgh
 from CombiCSP import HOYS_DEFAULT
 
 def CtoK(c: float):
@@ -38,7 +37,7 @@ class OutputContainer():
     Returns:
         _type_: _description_
     """    
-    hoy = sgh.HOYS_DEFAULT
+    hoy = HOYS_DEFAULT
     def __init__(self, data:pd.Series, A_helio:float, Ctow:float):
         """_summary_
 

@@ -19,13 +19,7 @@
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
-from scipy import integrate
 
-import CombiCSP.SolarGeometry as sgh
-# from CombiCSP.SolarGeometry import z,d, W
-# from CombiCSP.SolarGeometry import thetai, azim, ele
-# from iapws import IAPWS97
-# from numpy import pi, sin, cos, tan
 #%% material properties for storage
 #PCM data  Phase Change Material
 pcm_data = [[2200,2257,2110,2044,2380],
@@ -86,11 +80,21 @@ def heatloss_Mertins(d,epsilon,dt):
     '''
     return (d / 0.219) * ((1.945 - 0.2428 * epsilon/0.08) * dt + (0.001226 + 0.004568 * epsilon/0.08) * dt**2)
 
-def pipe_loss():
+def pipe_loss(Tout:float, Tin:float, Ta:float)->float:
+    """_summary_
+
+    Args:
+        Tout (float): exit temperature ? 
+        Tin (float): in temperature (?)
+        Ta (float): ambient temperature 
+
+    Returns:
+        float: _description_
+    """    
     '''Price, 2005 in pp.42 in A.M. Patnode, Simulation and Performance Evaluation of Parabolic Trough Solar Power Plants, 
     University of Wisconsin-Madison, 2006. https://minds.wisconsin.edu/handle/1793/7590 (accessed March 9, 2021).
     '''
-    DT = (sgh.Tout + sgh.Tin)/2 - sgh.Ta # [oC]
+    DT = (Tout + Tin)/2 - Ta # [oC]
     # 0.017 * DT - 1.683 * 1e-4 * DT**2 + 6.78 * 1e-7 * DT**3 ref?
     return 0.01693 * DT - 0.0001683 * DT**2 + 6.78 * 1e-7 * DT**3
 

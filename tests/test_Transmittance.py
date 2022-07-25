@@ -5,8 +5,9 @@
 """
 import pytest 
 import numpy as np
-import CombiCSP.SolarGeometry as sgh
+# import CombiCSP.SolarGeometry as sgh
 import CombiCSP.Transmittance as cspTr
+from CombiCSP import SolarSystemLocation
 
 @pytest.fixture
 def hoy_ex1():
@@ -18,7 +19,7 @@ def hoy_ex1():
 def Crete():
     """Example site
     """    
-    return sgh.SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
+    return SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
 
 @pytest.fixture
 def R():
@@ -56,14 +57,14 @@ class Test_TransmittivityFunctions:
     #TODO Everyone of this functions should be carefully validated at a later point.
     #TODO the Tr23m should have a different formula
     """    
-    def test_Tr23km(self,  hoy_ex1, alt):
+    def test_Tr23km(self, Crete, hoy_ex1, alt):
 
-        expected = 0.4207775856677556
-        assert cspTr.Tr23km(alt, hoy_ex1)[0] == pytest.approx(  expected , abs=1e-3)
+        expected =  1.1901465953860844
+        assert cspTr.Tr23km(alt, ssloc=Crete, hoy= hoy_ex1)[0] == pytest.approx(  expected , abs=1e-3)
          
-    def test_Tr5km(self,hoy_ex1, alt):
+    def test_Tr5km(self,hoy_ex1, alt, Crete):
         expected = 0.2930476046606646 
-        assert cspTr.Tr5km(alt=alt, hoy=hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
+        assert cspTr.Tr5km(alt=alt, ssloc=Crete, hoy=hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
         
         
     def test_TrD23km(self, R ):

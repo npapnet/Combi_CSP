@@ -9,9 +9,7 @@ import pytest
 import numpy as np
 import pandas as pd 
 
-# import CombiCSP.SolarGeometry as sgh
-# import CombiCSP.Transmittance as cspTr
-import CombiCSP.CSP as cspC
+
 from CombiCSP import SolarTroughCalcs, SolarSystemLocation
 
 @pytest.fixture

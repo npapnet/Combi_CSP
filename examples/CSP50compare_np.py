@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy_financial as npf
 
 from CombiCSP import HOYS_DEFAULT, SolarSystemLocation, SolarTowerCalcs, OutputContainer, Economic_environment, SolarTroughCalcs
-import CombiCSP.SolarGeometry as sgh
 import CombiCSP.misc as cspm
 import CombiCSP.economics as cspe
 
@@ -79,11 +78,10 @@ for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10
             csp_energy_price=csp_energy_price,
             csp_discount_rate= csp_discount_rate,
             power_block_cost=power_block_cost,
-            capital_csp=capital_csp,
         lifetime=range(30))
     area_list3.append(tmp_res_Dic['A_helio'] )
-    cash_flow_list3.append(tmp_res_Dic['cash_flow_tow'])
-    tow_scenaria3.append(tmp_res_Dic['tow_scenaria'])
+    cash_flow_list3.append(tmp_res_Dic['cash_flow'])
+    tow_scenaria3.append(tmp_res_Dic['scenaria'])
 
 
 

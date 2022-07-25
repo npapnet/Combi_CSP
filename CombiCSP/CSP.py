@@ -8,14 +8,13 @@
 #TODO    theta_transversal  function exists twice
 #%%
 '''Concentrating Solar Power plants'''
+import ssl
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import integrate
 
 from iapws import IAPWS97
-from CombiCSP import CtoK, HOYS_DEFAULT
-import CombiCSP.SolarGeometry as sgh
-from CombiCSP.SolarGeometry import W, z, d, thetai, azim, ele
+from CombiCSP import CtoK, HOYS_DEFAULT, SolarSystemLocation
 
 #%%
 
@@ -26,7 +25,7 @@ from CombiCSP.SolarGeometry import W, z, d, thetai, azim, ele
 
 
 #%% ===========================================================================
-def theta_transversal(hoy:np.array=HOYS_DEFAULT)->float : 
+def theta_transversal(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT)->np.array : 
     """Parabolic Trough theta  transversal incidence angle
 
     #TODO This function has the same name with another one in the same module
@@ -46,10 +45,10 @@ def theta_transversal(hoy:np.array=HOYS_DEFAULT)->float :
         float: theta  transversal incidence angle
     """    
 
-    return np.arctan(np.sin(np.radians(azim(hoy))) * np.tan(np.radians(sgh.z(hoy))))
+    return np.arctan(np.sin(np.radians(ssloc.azim(hoy))) * np.tan(np.radians(ssloc.z(hoy))))
 
 
-def theta_i(hoy:np.array=HOYS_DEFAULT)->float: 
+def theta_i(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT)->float: 
     """Parabolic Trough longitudinal incidence angle
 
     Buscemi, A.; Panno, D.; Ciulla, G.; Beccali, M.; Lo Brano, V. 
@@ -65,11 +64,11 @@ def theta_i(hoy:np.array=HOYS_DEFAULT)->float:
     Returns:
         float: not tested
     """    
-    return np.arctan(np.cos(np.radians(azim(hoy))) * np.tan(np.radians(sgh.z(hoy)))* np.cos(theta_transversal()))
+    return np.arctan(np.cos(np.radians(ssloc.azim(hoy))) * np.tan(np.radians(ssloc.z(hoy)))* np.cos(theta_transversal(ssloc=ssloc)))
 
 
 # not tested
-def thetai_transversal(hoy:np.array=HOYS_DEFAULT):
+def thetai_transversal(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
     """_summary_
 
     #TODO This function has the same name with another one in the same module
@@ -85,13 +84,19 @@ def thetai_transversal(hoy:np.array=HOYS_DEFAULT):
     Returns:
         _type_: _description_
     """    
-    return np.arctan(abs(np.sin(azim(hoy)))/np.tan(ele(hoy)))
+    return np.arctan(abs(np.sin(ssloc.azim(hoy)))/np.tan(ssloc.ele(hoy)))
 
-def thetai_longtitudinal(hoy:np.array=HOYS_DEFAULT): 
-    return np.arcsin(np.cos(azim(hoy))*np.cos(ele(hoy)))
+def thetai_longtitudinal(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT): 
+    return np.arcsin(np.cos(ssloc.azim(hoy))*np.cos(ssloc.ele(hoy)))
 
 
-def shade_function(Ws,Wc, hoy:np.array=HOYS_DEFAULT):
+def thetai(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT, inclination=90, azimuths=0): # incidence angle [in radians]
+    #TODO This function originially resides is solar_system_location.py
+    g = np.degrees(ssloc.azim(hoy)) - azimuths # if surface looks due S then azimuths=0
+    return np.arccos(np.cos(ssloc.ele(hoy)) * np.sin(np.radians(inclination)) * np.cos(np.radians(g)) 
+        + np.sin(ssloc.ele(hoy)) * np.cos(np.radians(inclination)))
+
+def shade_function(Ws,Wc, ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
     """Shade function for Parabolic Trough Solar Power Plants, 
 
     Stuetzle (2002) pp.29 in A.M. Patnode, Simulation and Performance Evaluation of Parabolic Trough Solar Power Plants, 
@@ -108,12 +113,12 @@ def shade_function(Ws,Wc, hoy:np.array=HOYS_DEFAULT):
     Returns:
         _type_: _description_
     """    
-    return abs(Ws * np.cos(z(hoy)) / (Wc * np.cos(thetai(hoy))))
+    return abs(Ws * np.cos(ssloc.z(hoy)) / (Wc * np.cos(thetai(ssloc, hoy))))
 
-def end_loss(f,L,N, hoy:np.array=HOYS_DEFAULT):
+def end_loss(f,L,N, ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
     '''Lippke, 1995 in pp.31 in A.M. Patnode, Simulation and Performance Evaluation of Parabolic Trough Solar Power Plants, 
     University of Wisconsin-Madison, 2006. https://minds.wisconsin.edu/handle/1793/7590 (accessed March 9, 2021).'''
-    return (1 - (f * np.tan(thetai(hoy)) / L)) * N
+    return (1 - (f * np.tan(thetai(ssloc=ssloc, hoy=hoy)) / L)) * N
 
 # def loss_regr(input_dict):
 #     '''pp.36-42 in A.M. Patnode, Simulation and Performance Evaluation of Parabolic Trough Solar Power Plants, 
