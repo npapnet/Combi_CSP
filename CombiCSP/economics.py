@@ -147,6 +147,8 @@ class Economic_environment():
     
     @TODO this class requires extensive rework to make it more generic. (more specifically exposure to the npv, dpb etc functions should be provided)
 
+    #TODO the `economics_for` functions follow a very specific pattern that can be crystallised instead of repeated. 
+    # A simple wrapper function can handle all three calls.
     
     """    
     def __init__(self, 

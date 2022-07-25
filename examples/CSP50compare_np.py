@@ -141,56 +141,49 @@ tmp_res_Dic =ee.economics_for_SolarTrough(
 # dpb_table = pd.DataFrame(DPB, index=area_list, columns = ['DPB (years)'])
 # dpb_table
 
-# # T+NS optimum
-# A_helio_optNS = 125000
-# N_opt_NS = 800
-# tower_opt = solarII(Ib,1,IAM_tow(hoy),A_helio_optNS,Ar)
-# trough_opt = di_sst(Ib,costhetai_NS(),IAM_tro(hoy),Tr, Wc, Wr, Ws, L, N_opt_NS)
-# combiNS = tower_opt + trough_opt
-# combiNS_xyz = np.vstack(combiNS).reshape((365,24)) # reshape 8760,1 to 365,24
-# plt.title('Tower + Trough N-S')
-# cspm.heatmap2d(combiNS_xyz.T)
+# T+NS optimum
+A_helio_optNS = 125000
+N_opt_NS = 800
 
-# area_combiNS = Ac(Wc, L, N_opt_NS)
-# PcombiNS = np.amax(combiNS) # used in CSPecon .round(2)
-# EcombiNS = integrate.trapz(combiNS).round(2) # used in CSPecon
+stc_opt =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, 
+        Ar = 99.3 , A_helio = A_helio_optNS,
+        slobj=sslCrete)
+oTow = stc_opt.perform_calc(Ib,transmittance=1)
+strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS, 
+        L=L, Wr=Wr, Wc=Wc, Ws = Ws,
+        slobj=sslCrete)
+oTr = strc_opt.perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
 
-# capital_combiNS = (A_helio_optNS+area_combiNS)*csp_area_costs + PcombiNS*power_block_cost
-# revenue_combiNS = cspe.cashflow(EcombiNS,csp_energy_price,Eoil,0.4,-oil_price,capital_combiNS)
-# cash_flow_combiNS = [-capital_combiNS] + [revenue_combiNS for i in range(30)]
-# dpb_combiNS = cspe.discounted_payback_period(csp_discount_rate, cash_flow_combiNS)
-# npv_combiNS = npf.npv(csp_discount_rate, [-capital_combiNS] \
-#     + [cspe.cashflow(EcombiNS,csp_energy_price,Eoil,0.4,-oil_price,capital_combiNS) for i in range(30)])
-# irr_combiNS = npf.irr([-capital_csp] \
-#     + [cspe.cashflow(EcombiNS,csp_energy_price,Eoil,0.4,-oil_price,capital_combiNS) for i in range(30)])
+combiNS_np = (oTow.data + oTr.data).values
+combiNS_xyz_np = np.vstack(combiNS_np).reshape((365,24))
 
-
+tmp_res_Dic =ee.economics_for_Combination(
+        oTr= oTr,
+        oTow = oTow,
+        csp_area_costs= csp_area_costs,
+        csp_energy_price=csp_energy_price,
+        csp_discount_rate= csp_discount_rate,
+        power_block_cost=power_block_cost,
+        # capital_csp= capital_csp,
+        lifetime=range(30))
 
 # # T+EW optimum
 # A_helio_optEW = 125000
 # N_opt_EW = 800
-# tower = solarII(Ib,1,IAM_tow(hoy),A_helio_optEW,Ar)
-# troughew = di_sst(Ib,costhetai_EW(),IAM_tro(hoy),Tr, Wc, Wr, Ws, L, N_opt_EW)
-# combiEW = tower + troughew
-# combiEW_xyz = np.vstack(combiEW).reshape((365,24)) # reshape 8760,1 to 365,24
-# plt.title('Tower + Trough E-W')
-# cspm.heatmap2d(combiEW_xyz.T)
 
-# area_combiEW = Ac(Wc, L, N_opt_EW)
-# PcombiEW = np.amax(combiEW) # used in CSPecon .round(2)
-# EcombiEW = integrate.trapz(combiEW).round(2) # used in CSPecon
+oTrEW = strc_opt.perform_calcs_EW(Ib=Ib,hoy= hoy, Tr=Tr)
+combiEW_np = (oTow.data + oTrEW.data).values
+combiEW_xyz_np = np.vstack(combiEW_np).reshape((365,24))
 
-# capital_combiEW = (A_helio_optEW+area_combiEW)*csp_area_costs + PcombiEW*power_block_cost
-# revenue_combiEW = cspe.cashflow(EcombiEW,csp_energy_price,Eoil,0.4,-oil_price,capital_combiEW)
-# cash_flow_combiEW = [-capital_combiEW] + [revenue_combiEW for i in range(30)]
-# dpb_combiEW = cspe.discounted_payback_period(csp_discount_rate, cash_flow_combiEW)
-# npv_combiEW = npf.npv(csp_discount_rate, [-capital_combiEW] 
-# + [cspe.cashflow(EcombiEW,csp_energy_price,Eoil,0.4,-oil_price,capital_combiEW) for i in range(30)])
-# irr_combiEW = npf.irr([-capital_csp] 
-# + [cspe.cashflow(EcombiEW,csp_energy_price,Eoil,0.4,-oil_price,capital_combiEW) for i in range(30)])
-
-# combi_finance = pd.DataFrame((dpb_combiNS,dpb_combiEW,npv_combiNS,npv_combiEW,irr_combiNS,irr_combiEW)).round(2)
-
+tmp_res_Dic =ee.economics_for_Combination(
+        oTr= oTrEW,
+        oTow = oTow,
+        csp_area_costs= csp_area_costs,
+        csp_energy_price=csp_energy_price,
+        csp_discount_rate= csp_discount_rate,
+        power_block_cost=power_block_cost,
+        # capital_csp= capital_csp,
+        lifetime=range(30))
 # # %%
 
 # %%
