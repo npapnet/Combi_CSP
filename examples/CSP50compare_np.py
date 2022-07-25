@@ -1,3 +1,4 @@
+# new OOP example of comparison
 #%%
 import pathlib
 import pandas as pd
@@ -11,9 +12,6 @@ from CombiCSP import HOYS_DEFAULT, SolarSystemLocation, SolarTowerCalcs, OutputC
 import CombiCSP.SolarGeometry as sgh
 import CombiCSP.misc as cspm
 import CombiCSP.economics as cspe
-
-from CombiCSP.solar_tower import solarII,IAM_tow
-from CombiCSP.solar_trough import di_sst, IAM_tro, costhetai_NS, costhetai_EW, Ac, Cg_tro
 
 from CombiCSP.storage import Tr
 
@@ -49,40 +47,6 @@ Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
 alt = 200*10e-3 #Height above sea level [m]
 Ht = 0.1 #np.arange(0.1,0.4,0.1) # Tower height [km]
 #R = 5
-
-
-area_list = []
-cash_flow_list = []
-tow_scenaria = []
-for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10000):
-    Ctow = A_helio / Ar
-    tower = solarII(Ib,1,IAM_tow(hoy),A_helio,Ar)
-    tow_xyz = np.vstack(tower).reshape((365,24)) # reshape 8760,1 to 365,24
-    tow_mon = np.vstack(tower).reshape((365,24)) # reshape 8760,1 to 365,24
-    Ptower = np.amax(tower) # used in CSPecon .round(2)
-    Etower = integrate.trapz(tower).round(2) # used in CSPecon
-    CF_tow = Etower / (8760 * Ptower)#.round(2)
-    CF_towh = Etower / (8760 * tower) #<<<<<<<<<<<<<<<<<<<<<<<<<too noisy, test with positive data
-    tow_data = np.vstack((A_helio,Ctow,Ptower,Etower,CF_tow)) # vertical stack
-    # economics
-    capital_csp_tow = A_helio*csp_area_costs + Ptower*power_block_cost
-    revenue_csp_tow = cspe.cashflow(Etower,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tow)
-    cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in range(30)]
-    dpb_tow = cspe.discounted_payback_period(csp_discount_rate, cash_flow_tow)
-    npv_csp_tow = npf.npv(csp_discount_rate, [-capital_csp_tow] + [cspe.cashflow(Etower,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tow) for i in range(30)])
-    irr_csp_tow = npf.irr([-capital_csp] + [cspe.cashflow(Etower,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tow) for i in range(30)])
-    area_list.append(A_helio)
-    cash_flow_list.append(cash_flow_tow)
-    tow_scenaria.append((A_helio,Ctow,Ptower,Etower,CF_tow,dpb_tow,npv_csp_tow,irr_csp_tow,cash_flow_tow))
-    # plt.plot(hoy, tower, label=A_helio)
-# plt.xlabel('Time (hour of year)')
-# plt.ylabel('Power (MW)') 
-# plt.title('Tower')
-# plt.legend()
-# #xlim(0,87.60), ylim(0,80)
-# plt.show()
-
-
 
 #%% Tower related dimensions
 # Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
@@ -123,17 +87,6 @@ for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10
 
 
 
-#%% Assertions 
-np.testing.assert_equal(area_list, area_list3) 
-np.testing.assert_equal(cash_flow_list, cash_flow_list3) 
-for k in range(len(tow_scenaria3)):
-    np.testing.assert_equal(tow_scenaria3[k][:8], tow_scenaria[k][:8]) 
-    np.testing.assert_equal(tow_scenaria3[k][8], tow_scenaria[k][8]) 
-
-print('tests between original code and OOP completed without problems')
-
-#%%
-#%%
 #%%
 # Trough dimensions
 foc_len = 0.88 # [m] focal length CSPP T.1 in Mosleh19
@@ -141,55 +94,7 @@ Wr = 0.07 # tube outer diameter [m]
 Wc = 5.76 # collector width [m] 5.76 DISS pp.3 in Zarza04, 3.1 CSPP T.1 in Mosleh19 5-7.5 in SAM
 Ws = 18 # [m] width between rows 18 INDITEP in pp.6 Fraidenraich13, pp.5 Zarza06
 L = 25 # [m * troughs] 12 * 40 DISS pp.3 in Zarza04 for 70MWe turbine
-
-
-## the following line should be uncommented. Otherwise the lists will grow from the Tower.
-# area_list = []  
-# cash_flow_list = []
-trough_scenaria = []
-troughew_scenaria = []
-for N in np.arange(800,1301,100): # 100MW np.arange(1000,2001,100):
-    area = Ac(Wc, L, N)
-    # NS calcs
-    trough = di_sst(Ib,costhetai_NS(),IAM_tro(hoy),Tr, Wc, Wr, Ws, L, N)
-    tro_xyz = np.vstack(trough).reshape((365,24)) # reshape 8760,1 to 365,24
-    Ptrough = np.amax(trough) # used in CSPecon .round(2)
-    Etrough = integrate.trapz(trough).round(2) # used in CSPecon
-    CF_tro = Etrough / (8760 * Ptrough)#.round(2)
-    tro_data = np.vstack((Ac(Wc, L, N),Cg_tro(Wc, Wr, L, N),Ptrough,Etrough,CF_tro)) # vertical stack
-    
-    # EW calcs
-    troughew = di_sst(Ib,costhetai_EW(),IAM_tro(hoy),Tr, Wc, Wr, Ws, L, N)
-    datah = np.vstack((hoy, trough))
-    Ptroughew = np.amax(troughew) # used in CSPecon .round(2)
-    Etroughew = integrate.trapz(troughew).round(2) # used in CSPecon
-    CF_troew = Etroughew / (8760 * Ptroughew)#.round(2)
-    tro_dataew = np.vstack((Ac(Wc, L, N),Cg_tro(Wc, Wr, L, N),Ptroughew,Etroughew,CF_troew)) # vertical stack
-
-    #plots
-    plt.plot(hoy, trough, label=N)#,xlim(100,600)
-    plt.plot(hoy, troughew, label=N)#,xlim(100,600)
-    # economics
-    capital_csp_tro = area*csp_area_costs + Ptrough*power_block_cost
-    revenue_csp_tro = cspe.cashflow(Etrough,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tro)
-    cash_flow_tro = [-capital_csp_tro] + [revenue_csp_tro for i in range(30)]
-    dpb_tro = cspe.discounted_payback_period(csp_discount_rate, cash_flow_tro)
-    npv_csp_tro = npf.npv(csp_discount_rate, [-capital_csp_tro] \
-        + [cspe.cashflow(Etrough,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tro) for i in range(30)])
-    irr_csp_tro = npf.irr([-capital_csp_tro] \
-        + [cspe.cashflow(Etrough,csp_energy_price,Eoil,0.4,-oil_price,capital_csp_tro) for i in range(30)])
-    area_list.append(area)
-    cash_flow_list.append(cash_flow_tro)
-    trough_scenaria.append((Ac(Wc, L, N),Cg_tro(Wc, Wr, L, N),Ptrough,Etrough,CF_tro,dpb_tro,npv_csp_tro,irr_csp_tro,cash_flow_tro))
-    troughew_scenaria.append((Ac(Wc, L, N),Cg_tro(Wc, Wr, L, N),Ptroughew,Etroughew,CF_troew,dpb_tro,npv_csp_tro,irr_csp_tro,cash_flow_tro))
-plt.xlabel('Time (hour of year)')
-plt.ylabel('Power (MW)'), 
-plt.legend()
-plt.title('Trough')
-#xlim(0,87.60), ylim(0,80)
-plt.show()
-
-#%%
+N = 800
 
 strc =  SolarTroughCalcs(foc_len=foc_len, N=N, 
         L=L, Wr=Wr, Wc=Wc, Ws = Ws,
@@ -213,14 +118,6 @@ for N_i in np.arange(800,1301,100): # 100MW np.arange(1000,2001,100):
 
 #%%
 
-#%% Assertions 
-np.testing.assert_equal(area_list[6:], ns_area_list) 
-np.testing.assert_equal(cash_flow_list[6:], ns_cash_flow_list) 
-for k in range(len(ns_trough_scenaria)):
-    np.testing.assert_equal(ns_trough_scenaria[k][:8], trough_scenaria[k][:8]) 
-    np.testing.assert_equal(ns_trough_scenaria[k][8], trough_scenaria[k][8]) 
-
-print('tests between original code and OOP completed without problems')
 #%%
 
 strc =  SolarTroughCalcs(foc_len=foc_len, N=1800, 

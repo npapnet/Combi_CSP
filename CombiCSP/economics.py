@@ -11,8 +11,18 @@ import numpy_financial as npf
 
 from CombiCSP import OutputContainer
 
-def discounted_payback_period(rate, cash_flows): # #https://sushanthukeri.wordpress.com/2017/03/29/discounted-payback-periods/
-    '''Return the Discounted Payback Period'''
+def discounted_payback_period(rate, cash_flows): # #
+    """Return the Discounted Payback Period
+
+    based on https://sushanthukeri.wordpress.com/2017/03/29/discounted-payback-periods/
+
+    Args:
+        rate (_type_): interest rate 
+        cash_flows (_type_): cash flows
+
+    Returns:
+        _type_: payback period in years
+    """    
     cf_df = pd.DataFrame(cash_flows, columns=['UndiscountedCashFlows'])
     cf_df.index.name = 'Year'
     cf_df['DiscountedCashFlows'] = npf.pv(rate, pmt=0, nper=cf_df.index, fv=-cf_df['UndiscountedCashFlows'])
@@ -145,13 +155,14 @@ class Economic_environment():
         """_summary_
 
         Args:
-            oil_price (float): _description_
-            Eoil (float): _description_
+            oil_price (float): price of oil 
+            Eoil (float): Energy of oil required for operation??? in BOE (Barrels Oil Equivalent)
             currency_units (str, optional): _description_. Defaults to 'USD'.
+
         """        
         
         self._oil_price = oil_price
-        self._Eoil = Eoil
+        self._Eoil = Eoil   #TODO clarify usage
         self.currency_units = currency_units
 
     @property
@@ -205,12 +216,8 @@ class Economic_environment():
             csp_area_costs (_type_): _description_
             csp_energy_price (_type_): _description_
             csp_discount_rate (_type_): _description_
-            capital_csp (float): description
             power_block_cost (_type_): _description_
-            Eoil (_type_): _description_
-            oil_price (_type_): _description_
-            lifetime (_type_, optional): _description_. Defaults to range(30).
-
+            
         Returns:
             _type_: _description_
         """    
@@ -222,7 +229,7 @@ class Economic_environment():
         dpb_tow = discounted_payback_period(csp_discount_rate, cash_flow_tow)
         npv_csp_tow = npf.npv (csp_discount_rate, [-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
         irr_csp_tow = npf.irr([-capital_csp] + [revenue_csp_tow for i in lifetime])
-        # TODO the above line should be  (i.e. `capital_csp` -> `capital_csp_tow`)
+        # TODO in the above line I should replace  {`capital_csp` -> `capital_csp_tow`}
         # irr_csp_tow = npf.irr([-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
         return {
             'A_helio': oTow.A_helio,
@@ -241,16 +248,16 @@ class Economic_environment():
         csp_discount_rate,
         power_block_cost,
         lifetime=range(30)):
-        """This function performs an economic analysis on the performance output of a csp
+        """This function performs an economic analysis on the performance 
+        output of a csp
 
         Args:
-            oTow (OutputContainer): _description_
-            csp_area_costs (_type_): _description_
-            csp_energy_price (_type_): _description_
-            csp_discount_rate (_type_): _description_
-            capital_csp (float): description
-            power_block_cost (_type_): _description_
-            Eoil (_type_): _description_
+            oTow (OutputContainer): references the trough object
+            csp_area_costs (_type_): csp area costs
+            csp_energy_price (_type_): energy prices
+            csp_discount_rate (_type_): discount rate
+            power_block_cost (_type_): cost of the power block
+            Eoil (float): Oil price
             oil_price (_type_): _description_
             lifetime (_type_, optional): _description_. Defaults to range(30).
 
