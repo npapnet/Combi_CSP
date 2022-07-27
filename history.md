@@ -2,29 +2,36 @@
 
 # TODO items
 
-
-- remove old procedural function of solar geometry
-- remove old procedural functions that are now part of SolarTowerCalcs and SolarTroughCalcs
-- remove original versions of:
-  - `CSPCret.py` and comparison file
-  - `CSP50Compare.py` and comparison file
-  - `CombiCSP.ipynb`
-- Write an equivalent version of CSP50Compare.py using the new class system
 - HOYS_DEFAULT should be removed. The Ib data has a time series and that should be used instead of HOYS.
+
+- Add description to the SolarTrough and SolarTower
+- Rename calculation functions solarII (Tower) and di_sst (Trough), and add all the relebant parameters
 - Remove/rewrite the following files:
-  - SolarGeometry.py
   - CSP.py
   - storage.py
   - Transmittance.py
 - (low priority) Documentation
 - (low priority) submit to pypi
 
-## v1.5.0 (Working on)
-
+## Work in progress of v1.6.0 
+### **(Working on)**
+- Develop a new function for the combined system (CombiCSP_System).
+- Develop unit tests for the combined system CombiCSP_System.
+### **Completed**
 - complete transition of `CSP50Compare.py`: there are financial optimisation function that need completion.
 - `CSP50_common_econ.py` contains important information.
+- Wrote an equivalent version of CSP50Compare.py using the new class system
 
-**Completed**
+- removed old procedural function of solar geometry
+- removed old procedural functions that are now part of SolarTowerCalcs and SolarTroughCalcs
+- removed original versions of:
+  - `CSPCret.py` and comparison file
+  - `CSP50Compare.py` and comparison file
+  - `CombiCSP.ipynb`
+
+- Removed the following files:
+  - SolarGeometry.py
+
 
 ## v1.5.0 (20220721)
 

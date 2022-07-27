@@ -152,7 +152,7 @@ def compare_date(date_str:str, tower, trough, Ib:pd.Series, save_to_file:bool = 
     Etow = integrate.trapz(tower.incident_energy_on_system(Ib)).round(2)
     print("Total incident energy of NS Solar Trough ={} [MWh]".format(Ens))
     print("Total incident energy of NS Solar Trough ={} [MWh]".format(Eew))
-    Etow
+
     if save_to_file:
         IMG_FOLDER  = pathlib.Path("imgs/")
         IMG_FOLDER.mkdir(parents=True, exist_ok=True)
