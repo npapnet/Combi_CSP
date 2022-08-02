@@ -17,8 +17,8 @@ class CSPSystemCombination():
             tow_lst (list): list of solar tower objects
             trough_lst (list): list of solar trough objects
         """
-        self._tow_lst = tow_lst if tow_lst is not None else tow_lst
-        self._trough_lst = trough_lst if trough_lst  is not None else trough_lst 
+        self._tow_lst = tow_lst if tow_lst is not None else []
+        self._trough_lst = trough_lst if trough_lst  is not None else []
     
     def add_tower(self, tow_obj):
         """_summary_
@@ -66,15 +66,30 @@ class CSPSystemCombination():
         """_summary_
 
         Args:
-            hoy (_type_): _description_
-            Ib (_type_): _description_
-            tow_args (dict): _description_
-            trough_args (dict): _description_
+            hoy (_type_): duration that the anlysis takes place in hour of the year (HOY)
+            Ib (_type_): irradiance
+            tow_args (dict): tower calcs analysis calculations
+            trough_args (dict): trough calcs analysis calculations
 
         Raises:
             Exception: _description_
         """        
-        raise Exception('Not implemented yet')
-        res =0
-        return res
+        otws = []
+        for ostwc in self._tow_lst:
+            assert isinstance(ostwc, SolarTowerCalcs)
+            otws.append(ostwc.perform_calc(hoy=hoy, Ib=Ib, **tow_args))
+        otrs = []
+        for ostrc in self._trough_lst:
+            assert isinstance(ostwc, SolarTroughCalcs)
+            otrs.append(ostrc.perform_calc(hoy=hoy, Ib=Ib, **trough_args))
+        
+        return CCSP_Result_Container(towers= otws, troughs=otrs)
+        # raise Exception('Not implemented yet')
+        # res =0
+        # return res
     
+class CCSP_Result_Container():
+    def __init__(self, towers, troughs) -> None:
+        self._tows = towers
+        self._troughs = troughs
+# %%
