@@ -6,7 +6,16 @@ The relevant work pertaining to this software is : https://doi.org/10.1016/j.ape
 
 # Quick-Start
 
-clone the repository from [the CombiCSP][1].
+There are several methods to install 
+## Using pip
+
+in a new environmetn 
+
+`pip  install CombiCSP`
+
+## Cloning the repository and using setuptools
+
+clone the repository from [the CombiCSP][2].
 
 then move to the root of the repository and perform (this requires python [`setuptools`][1] )
 
@@ -21,9 +30,9 @@ Additionally, example cases are scripted in the following files:
 - `CSPCret.py`: heliostat and CSP power and energy outputs in a location in Crete, Greece
 - `CSP50Compare.py`: Combined heliostat and CSP power and energy outputs in a location in Crete, Greece
 
-# installation/setup
+##  Cloning the repository and Manual installation/setup
 
-## requirements
+### requirements
 
 The following **mainstream** packages are required for this library (most of them are already installed in a typical installation).
 
@@ -38,7 +47,7 @@ Additional libraries are:
 - iapws (The InternationalAssociation for the Properties of Water and Steam)
 - numpy-financial
 
-## Conda installation
+### Conda installation
 
 The following describes a minimum environment using conda. 
 
