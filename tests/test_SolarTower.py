@@ -73,3 +73,16 @@ def test_perform_calcs_st2(st2, Ib):
     # assert oTow.Energy_MWh == pytest.approx(17.6241589171352,1e-6) , 'Energy_MWh is incorrect'
 
 
+
+def test_find_area_for_maxMW(st2, Ib):
+    """ Test find_area_for_maxMW functionality
+    
+    Args:
+        st2 (_type_): _description_
+        Ib (_type_): _description_
+    """    
+    res = st2.find_area_for_max_MW(target_MW= 50, Ib= Ib,transmittance=1, nG=0.97)
+    assert res == pytest.approx(212705.69, abs=0.05), "there is a problem with the optimisation"
+
+    
+

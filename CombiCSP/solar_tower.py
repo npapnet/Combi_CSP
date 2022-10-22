@@ -6,8 +6,11 @@
 """
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
+
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT, SolarSystemLocation
 from CombiCSP.solar_system_location import SolarSystemLocation
+
   
 class SolarTowerCalcs():
     def __init__(self, 
@@ -100,7 +103,7 @@ class SolarTowerCalcs():
             P = Qnet * nR * nG
         return P/1e6 # convert W to MW
 
-    #%% Incidence angle methods for towers
+    # Incidence angle methods for towers
 
     def IAM_tow(self, hoy:np.array=HOYS_DEFAULT)->np.array : 
         """Incidence angle modifier of Tower (azimuth)
@@ -124,14 +127,49 @@ class SolarTowerCalcs():
         , Ar = None 
         , A_helio = None
         , slobj:SolarSystemLocation = None):
+        """Function that produces a new Solar tower object with different parameters
+
+        If a parameter is not set then it does not change.
+
+        Args:
+            alt (_type_, optional): _description_. Defaults to None.
+            Ht (_type_, optional): _description_. Defaults to None.
+            Ar (_type_, optional): _description_. Defaults to None.
+            A_helio (_type_, optional): _description_. Defaults to None.
+            slobj (SolarSystemLocation, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """        
         alt = self.alt_m if alt is None else alt
         Ht = self.Ht_km if Ht is None else Ht
         Ar = self.Ar_m2 if Ar is None else Ar
         A_helio = self.A_helio_m2 if A_helio is None else A_helio
         slobj = self._sl if slobj is None else slobj
         return SolarTowerCalcs(alt = alt, Ht=Ht, Ar=Ar, A_helio=A_helio, slobj=slobj)
+
+    def find_area_for_max_MW(self,  target_MW :float, Ib, 
+        transmittance=1, nG=0.97, hoy=HOYS_DEFAULT)->float:
+        """finds the required area for the parameters of the solar tower
+
+        Args:
+            target_MW(float): max MW targed
+            Ib (_type_): _description_
+            transmittance (int, optional): _description_. Defaults to 1.
+            nG (float, optional): _description_. Defaults to 0.97.
+            hoy (_type_, optional): _description_. Defaults to HOYS_DEFAULT.
         
-    
+        returns:
+            (float) : The area that produces the target MW
+        """  
+
+        func = lambda x: np.abs(self.mutate(A_helio=x).perform_calc(Ib=Ib, transmittance=transmittance, nG=nG).PowerMax_MW - target_MW)
+        x0 = np.array(target_MW) # initial value 
+        res = minimize(func, x0, method='nelder-mead',
+                    options={'xatol': 1e-4, 'disp': False})
+        return res.x[0]
+
+
 def solarII(Ib:pd.Series,Trans:float,IAM:np.array,A_helio:float,Ar:float, 
             nG:float = 0.97)->pd.Series:
     """Calculates the power of the solar tower with heliostat

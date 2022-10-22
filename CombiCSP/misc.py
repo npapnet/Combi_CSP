@@ -93,8 +93,19 @@ class OutputContainer():
         return pd.DataFrame({'Power_MW':self.data}, index= self.hoy)
 
     def summary_tower_data(self):    
+        # TODO change the name (this does not apply to Tower data only)
         tow_data = np.vstack((self.A_helio,self.Ctow,self.PowerMax_MW,self.Energy_MWh,self.CF)) # vertical stack
         return tow_data
+
+    def print_summary(self):    
+        str_out = ">>>>> Summary of results <<<<<<<<<\n" 
+        str_out +="Reflective Solar Area : {} [m^2]\n".format(self.A_helio)
+        str_out +="ratio Reclective/Coll : {:.8g} \n".format( self.Ctow) 
+        str_out +="Max Power             : {:.2f} [MW]\n".format(self.PowerMax_MW) 
+        str_out +="Energy Yield          : {:.2f} [MWh]\n".format(self.Energy_MWh) 
+        str_out +="Concentration Factor  : {:.5g}  ".format(self.CF)
+        print (str_out)
+
 
 
 def heatmap2d_sns(data, title:str= '', figsize:tuple=(15,8)):
