@@ -5,9 +5,9 @@
     @Credit: original functions from G. Arnaoutakis
 """
 #%%
-from multiprocessing.sharedctypes import Value
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT
 from CombiCSP.solar_system_location import SolarSystemLocation, d
@@ -118,6 +118,16 @@ class SolarTroughCalcs():
         """
 
         return self.Ac() / self.Ar()
+
+    def perform_calc(self, alignment:str, Ib, Tr=318, hoy=HOYS_DEFAULT):
+        assert alignment in ['EW', 'NS'], 'Alignement should be one of ["EW", "NS"]'
+        if alignment == 'NS':
+            return self.perform_calcs_NS(Ib=Ib, Tr=Tr, hoy=hoy)
+        elif alignment == 'EW':
+            return self.perform_calcs_EW(Ib=Ib, Tr=Tr, hoy=hoy)
+        else:
+            raise Exception('Alignement should be one of ["EW", "NS"]')
+
 
     def perform_calcs_EW(self, Ib, Tr=318, hoy=HOYS_DEFAULT):
         """Calculation for a solar trough oriented EW for a year per hour 
@@ -269,6 +279,19 @@ class SolarTroughCalcs():
         return P/1e6 # convert W to MW
     
     def incident_energy_on_system(self, alignment:str,  Ib:pd.Series, hoy:np.array = HOYS_DEFAULT)->pd.Series:
+        """Function that returns the incident energy on the system depending on the alignment
+
+        Args:
+            alignment (str): _description_
+            Ib (pd.Series): _description_
+            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
+
+        Raises:
+            Exception: _description_
+
+        Returns:
+            pd.Series: _description_
+        """        
         assert alignment in ['EW', 'NS'], 'Alignement should be one of ["EW", "NS"]'
         if alignment == 'NS':
             return Ib*self.costhetai_NS(hoy)*self.IAM_tro(hoy)
@@ -284,6 +307,20 @@ class SolarTroughCalcs():
         ,Wr = None 
         ,Wc = None
         , slobj:SolarSystemLocation =  None):
+        """ produces a mutated solar trough object, with different properties (When set). 
+
+        Args:
+            foc_len (_type_, optional): _description_. Defaults to None.
+            N (_type_, optional): _description_. Defaults to None.
+            L (_type_, optional): _description_. Defaults to None.
+            Ws (_type_, optional): _description_. Defaults to None.
+            Wr (_type_, optional): _description_. Defaults to None.
+            Wc (_type_, optional): _description_. Defaults to None.
+            slobj (SolarSystemLocation, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """        
         foc_len = self.foc_len if foc_len is None else foc_len
         N = self.N if N is None else N
         L = self.L if L is None else L
@@ -300,7 +337,30 @@ class SolarTroughCalcs():
             ,Wc =Wc 
             , slobj=  slobj
                                 )
+
+    def find_units_for_max_MW(self,  target_MW :float,
+        alignment:str, 
+        Ib:pd.Series, 
+        Tr=318., hoy=HOYS_DEFAULT)->float:
+        """finds the required number of units based on the other parameters of the solar trough
+
+        Args:
+            target_MW(float): max MW targed
+            alignment(str): the alignment of the solar trough 
+            Ib (pd.Series): beam irradiance
+            Tr (float, optional): [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04. Defaults to 318.
+            hoy (_type_, optional): _description_. Defaults to HOYS_DEFAULT.
         
+        returns:
+            (float) : The area that produces the target MW
+        """  
+
+        func = lambda x: np.abs(self.mutate(N=x).perform_calc(alignment=alignment, Ib=Ib, Tr=Tr).PowerMax_MW - target_MW)
+        x0 = np.array(self.N) # initial value 
+        res = minimize(func, x0, method='nelder-mead',
+                    options={'xatol': 1e-4, 'disp': False})
+        return res.x[0]
+
 
 #%% Incidence angle methods for troughs
 # def IAM_tro2(hoy:np.array=HOYS_DEFAULT):
