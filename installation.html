@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Installation/Setup &#8212; CombiCSP v1.5.0a0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=9c0396c5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="prev" title="CombiCSP Project Documentation" href="introduction.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="installation-setup">
+<h1>Installation/Setup<a class="headerlink" href="#installation-setup" title="Link to this heading">¶</a></h1>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h2>
+<p>The package depends on the following “standard” libraries:</p>
+<ul class="simple">
+<li><p>matplotlib</p></li>
+<li><p>scipy</p></li>
+<li><p>pandas</p></li>
+<li><p>ipykernel</p></li>
+</ul>
+<p>Additional libraries required are:</p>
+<ul class="simple">
+<li><p>pvlib_python</p></li>
+<li><p>iapws (The International Association for the Properties of Water and Steam)</p></li>
+<li><p>numpy-financial</p></li>
+</ul>
+</section>
+<section id="conda-installation">
+<h2>Conda Installation<a class="headerlink" href="#conda-installation" title="Link to this heading">¶</a></h2>
+<p>The following describes a minimum environment setup using Conda.</p>
+<p>(Optional) It is preferable to create a new environment for the packages:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>combicsp<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>
+</pre></div>
+</div>
+<p>The installation requires:</p>
+<ul class="simple">
+<li><p>matplotlib</p></li>
+<li><p>scipy</p></li>
+<li><p>pandas</p></li>
+<li><p>ipykernel</p></li>
+</ul>
+<p>To install these packages, use the command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>matplotlib<span class="w"> </span>scipy<span class="w"> </span>pandas<span class="w"> </span>ipykernel
+</pre></div>
+</div>
+<p>For the additional libraries:</p>
+<ul>
+<li><p>pvlib_python:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>pvlib-python
+</pre></div>
+</div>
+</li>
+<li><p>iapws (The International Association for the Properties of Water and Steam):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>iapws
+</pre></div>
+</div>
+</li>
+<li><p>numpy-financial:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>numpy-financial
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">CombiCSP</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">CombiCSP Project Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation/Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conda-installation">Conda Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">CombiCSP Module Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="introduction.html" title="previous chapter">CombiCSP Project Documentation</a></li>
+      <li>Next: <a href="tutorials/index.html" title="next chapter">Tutorials</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, N. Papadakis, G. Arnaoutakis.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
