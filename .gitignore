@@ -5,3 +5,4 @@ __pycache__/
 /CombiCSP.egg-info/
 /doc/tex/
 /.vscode/settings.json
+/docs/build/

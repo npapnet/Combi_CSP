@@ -12,11 +12,9 @@ import pvlib
 
 HOYS_DEFAULT = np.arange(1, 8761, 1) # hours of year
 
-
-
 class SolarSystemLocation:
     def __init__(self, lat:float,  lon:float, mer:float,dt_gmt:float, alt:float=0):
-        """_summary_
+        """class that contains the location of the system 
 
         Args:
             lat (float): longitude of system 
@@ -153,20 +151,23 @@ class SolarSystemLocation:
     def Ib_from_pvgis(self, tz: str = 'Europe/Athens', 
         altitude:float = 400, 
         name = 'Default')->pd.Series:
-        """connects to pvgis database and downloads the file.
+        """Connects to PVGIS database and downloads the file.
 
         Args:
             tz (str, optional): Timezone. Defaults to 'Europe/Athens'.
             altitude (float, optional): Site altitude in [m]. Defaults to 400.
-            name (str, optional): Name of the site . Defaults to 'Default'.
+            name (str, optional): Name of the site. Defaults to 'Default'.
 
         Returns:
-            the times of data are for the year 2020
-            pd.DataFrame: a Dataframe containing the following columns with index the hourly data
-                ghi:  global horizontal irradiance[W/m^2]
-                dni:  direct normal irradiance [W/m^2]
-                dhi:  diffuse horizontal irradiance [W/m^2]
-        """   
+            pd.DataFrame: A DataFrame containing the following columns, with hourly data as index:
+                - ghi: Global horizontal irradiance [W/m^2].
+                - dni: Direct normal irradiance [W/m^2].
+                - dhi: Diffuse horizontal irradiance [W/m^2].
+
+            Note: The times of data are for the year 2020.
+            
+        """
+
         times = pd.date_range(start='2020-01-01', periods=8760, freq='1H', tz=tz) #end='2020-12-31', 
         #TODO allow for modification of the times of start and end
         solpos = pvlib.solarposition.get_solarposition(times, self.lat, self.lon)
@@ -181,7 +182,7 @@ class SolarSystemLocation:
         return pvlib_data
 
 
-# #TODO: consider creating a system/Unit parameters
+#TODO: consider creating a system/Unit parameters
 #  def thetai(hoy:np.array=HOYS_DEFAULT, inclination=90, azimuths=0): # incidence angle [in radians]
 #
 #     g = deg(azim(hoy)) - azimuths # if surface looks due S then azimuths=0
@@ -214,7 +215,7 @@ def get_pvgis_tmy_data(sysloc:SolarSystemLocation)->pd.DataFrame:
     # dat[1] # monts of year for data 
     # dat[2] # metadata for the data set
     # dat[3] # variable explanation
-    return df 
+    return df
 
 #%% Equations of time
 
@@ -307,7 +308,7 @@ def d(hoy:np.array=HOYS_DEFAULT): # [in radians] https://en.wikipedia.org/wiki/S
     dMeanAnomaly = 6.2400600 + 0.0172019699 * hoy
     dEclipticLongitude = dMeanLongitude + 0.03341607 * np.sin(dMeanAnomaly) 
     + 0.00034894 * np.sin( 2 * dMeanAnomaly) - 0.0001134 - 0.0000203 * np.sin(dOmega)
-    dEclipticObliquity = 0.4090928 - 6.2140e-9 * hoy 
+    dEclipticObliquity = 0.4090928 - 6.2140e-9 * hoy
     + 0.0000396 * np.cos(dOmega)
     '''Calculate celestial coordinates ( right ascension and declination ) in radians
     but without limiting the angle to be less than 2*Pi (i.e., the result may be
