@@ -2,12 +2,12 @@
 """
     @Author: G. Arnaoutakis, N. Papadakis
     @Date: 2022/  
+    @Description: Concentrating Solar Power plants
 """
 
 #TODO this module contains unused functions (not  tested)
 #TODO    theta_transversal  function exists twice
-#%%
-'''Concentrating Solar Power plants'''
+
 import ssl
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,8 +15,6 @@ from scipy import integrate
 
 from iapws import IAPWS97
 from CombiCSP import CtoK, HOYS_DEFAULT, SolarSystemLocation
-
-#%%
 
 #%%
 # generator data

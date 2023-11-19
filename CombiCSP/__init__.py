@@ -1,9 +1,10 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 """
-    @Author: G.Arnaoutakis, N.Papadakis
+    @Author: N.Papadakis, G. Arnaoutakis
     @Date: 2022/06/30
     @Credit: the functions were originally in  CSPEcon.py 
 """
+__version__ = '1.5.0a0'
 from CombiCSP.solar_system_location import HOYS_DEFAULT
 from CombiCSP.misc import CtoK, OutputContainer
 from CombiCSP.solar_system_location import SolarSystemLocation
