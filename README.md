@@ -3,6 +3,7 @@ CombiCSP is an open source software for dynamic modelling of concentrating solar
 
 The relevant work pertaining to this software is : https://doi.org/10.1016/j.apenergy.2022.119450
 
+DOCUMENTATION: [https://npapnet.github.io/Combi_CSP/](https://npapnet.github.io/Combi_CSP/)
 
 # Quick-Start
 
