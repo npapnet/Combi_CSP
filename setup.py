@@ -66,7 +66,7 @@ setuptools.setup(
     tests_require=test_requirements,
     python_requires='>=3.8',
     project_urls={
-        'Documentation': 'https://combi-csp.github.io/en/latest/',
+        'Documentation': 'https://npapnet.github.io/Combi_CSP/',
         'Source': 'https://github.com/npapnet/Combi_CSP/'
     },
 )

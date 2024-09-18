@@ -6,3 +6,4 @@ __pycache__/
 /doc/tex/
 /.vscode/settings.json
 /docs/build/
+dist/
