@@ -13,6 +13,7 @@ from CombiCSP.solar_system_location import SolarSystemLocation
 
   
 class SolarTowerCalcs():
+    _hourly_results : OutputContainer = None
     def __init__(self, 
         alt = 200*10e-3 
         , Ht = 0.1
@@ -30,7 +31,7 @@ class SolarTowerCalcs():
         else:
             self._sl = slobj
 
-    def perform_calc(self, Ib, transmittance=1, nG=0.97, hoy=HOYS_DEFAULT):
+    def perform_calc(self, Ib, transmittance=1, nG=0.97, hoy=HOYS_DEFAULT)->OutputContainer:
         """Performs solar tower calculations
 
         Args:
@@ -43,9 +44,13 @@ class SolarTowerCalcs():
             _type_: _description_
         """        
         # data = solarII(Ib=Ib,Trans=transmittance, IAM=IAM_tow(hoy)
-        data = self.solarII(Ib=Ib,Trans=transmittance, nG=0.97, hoy=hoy)
-        self._hourly_results = OutputContainer(data = data, \
-                A_helio=self.A_helio_m2, Ctow=self.Ctow)
+        
+        self._hourly_results = OutputContainer(
+            data = self.solarII(Ib=Ib,Trans=transmittance, nG=0.97, hoy=hoy),
+            A_helio=self.A_helio_m2, 
+            Ctow=self.Ctow,
+            Ib_N=Ib
+            )
         return self._hourly_results
     
     def solarII(self, Ib:pd.Series,Trans:float, nG:float = 0.97, hoy:np.array=HOYS_DEFAULT)->pd.Series:

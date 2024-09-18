@@ -47,8 +47,8 @@ Ib = pvgis_data.loc[:,'Gb(n)']
 # 
 # Define solar tower object oTow
 #%%
-Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
 alt = 200*10e-3 #Height above sea level [m] #FIXME this si probably [km] instead of [m]
+Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
 Ht = 0.1 #np.arange(0.1,0.4,0.1) # Tower height [km]
 # A_helio = 225000 # SolarII 82,750 m² for 10MW https://en.wikipedia.org/wiki/The_Solar_Project
 

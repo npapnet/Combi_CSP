@@ -14,6 +14,8 @@ from CombiCSP.solar_system_location import SolarSystemLocation, d
 
 
 class SolarTroughCalcs():
+    _hourly_results : OutputContainer = None
+    
     def __init__(self,
         foc_len = 0.88 
         ,N = 1800 
@@ -119,7 +121,7 @@ class SolarTroughCalcs():
 
         return self.Ac() / self.Ar()
 
-    def perform_calc(self, alignment:str, Ib, Tr=318, hoy=HOYS_DEFAULT):
+    def perform_calc(self, alignment:str, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
         assert alignment in ['EW', 'NS'], 'Alignement should be one of ["EW", "NS"]'
         if alignment == 'NS':
             return self.perform_calcs_NS(Ib=Ib, Tr=Tr, hoy=hoy)
@@ -129,7 +131,7 @@ class SolarTroughCalcs():
             raise Exception('Alignement should be one of ["EW", "NS"]')
 
 
-    def perform_calcs_EW(self, Ib, Tr=318, hoy=HOYS_DEFAULT):
+    def perform_calcs_EW(self, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
         """Calculation for a solar trough oriented EW for a year per hour 
 
         Args:
@@ -148,12 +150,13 @@ class SolarTroughCalcs():
         costhetai_EW_arr =  np.cos( d(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(d(hoy)**2))**0.5
         
         data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
-        return OutputContainer(data = data, A_helio=self.area, Ctow=self.Cg)
+        self._hourly_results = OutputContainer(data = data, A_helio=self.area, Ctow=self.Cg)
+        return self._hourly_results
 
     def costhetai_EW(self, hoy):
         return  np.cos( d(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(d(hoy)**2))**0.5
 
-    def perform_calcs_NS(self, Ib, Tr=318., hoy=HOYS_DEFAULT):
+    def perform_calcs_NS(self, Ib, Tr=318., hoy=HOYS_DEFAULT)->OutputContainer:
         """Calculation for a solar trough oriented NS for a year per hour 
 
         Args:
@@ -174,9 +177,10 @@ class SolarTroughCalcs():
  
         data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=costhetai_NS_arr,
                       Tr=Tr)
-        return OutputContainer(data = data, A_helio=self.area, Ctow=self.Cg)
+        self._hourly_results  = OutputContainer(data = data, A_helio=self.area, Ctow=self.Cg)
+        return self._hourly_results
     
-    def costhetai_NS(self, hoy):
+    def costhetai_NS(self, hoy)->np.array:
         lat_rad = self._sl.lat_rad
         return np.cos(d(hoy)) * (np.sin(np.radians(self._sl.W(hoy)))**2 + 
                 (np.cos(lat_rad) *  np.cos(np.radians(self._sl.W(hoy))) + np.tan(d(hoy)) * np.sin(lat_rad))**2)**0.5
@@ -201,7 +205,7 @@ class SolarTroughCalcs():
             + np.sin(elev) * np.cos(np.radians(inclination)))
 
 
-    def IAM_tro(self, hoy:np.array=HOYS_DEFAULT): 
+    def IAM_tro(self, hoy:np.array=HOYS_DEFAULT)->np.array: 
         """Incidence angle modifier of parabolic trough - equation1
         
         G.A. Salazar, N. Fraidenraich, C.A.A. de Oliveira, O. de Castro Vilela, M. Hongn, J.M. Gordon, 
@@ -306,7 +310,7 @@ class SolarTroughCalcs():
         ,Ws = None
         ,Wr = None 
         ,Wc = None
-        , slobj:SolarSystemLocation =  None):
+        , slobj:SolarSystemLocation =  None)->'SolarTroughCalcs':
         """ produces a mutated solar trough object, with different properties (When set). 
 
         Args:

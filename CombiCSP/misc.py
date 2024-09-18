@@ -29,7 +29,8 @@ def CtoK(c: float):
 class OutputContainer():
     """this is a container for the data and reshaping them. 
 
-    **IMPORTANT NOTE**:    For simplicity reasons this assumes that the time index will always be hourly the days of the year
+    **IMPORTANT NOTE**:    
+    For simplicity reasons this assumes that the time index will always be hourly the days of the year
 
     #TODO currently the names reflect the origins from the tower calculation, it should be changed to a more generic.
     #TODO consider giving access to the original object that spawned this object.
@@ -38,19 +39,27 @@ class OutputContainer():
         _type_: _description_
     """    
     hoy = HOYS_DEFAULT
-    def __init__(self, data:pd.Series, A_helio:float, Ctow:float):
+    _df:pd.DataFrame = None
+    
+    def __init__(self, data:pd.Series, A_helio:float, Ctow:float, hoys:np.ndarray = None, Ib_N:np.ndarray = None):
         """_summary_
 
         Args:
             data (np.array): time series
             A_helio (_type_): The heliostats area in m2
             Ctow (_type_): the ratio of area of heliostat to solar tower receiver 
-        """        
+        """
+        # assert data.shape == hoys.shape, "Data and hoys should have the same shape"
         if not data.shape == (8760,):
             raise ValueError("Wrong time series")
         self.data = data
         self.A_helio = A_helio
         self.Ctow = Ctow
+        self._df = pd.DataFrame({'HOY': self.hoy, 'Power_MW':self.data})
+        if Ib_N is not None:
+            self._df['Ib_n'] = Ib_N
+        
+        
 
     def hour_power_arr(self):
         return np.vstack((self.hoy, self.data))
