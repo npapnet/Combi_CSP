@@ -12,6 +12,10 @@ import pandas as pd
 
 from CombiCSP import SolarTroughCalcs, SolarSystemLocation
 
+from datetime import datetime
+def custom_date_parser(date_str):
+    return datetime.strptime(date_str, "%Y%m%d:%H%M")  # Adjust format as needed
+
 @pytest.fixture
 def sotr():
     """SolarTrough ExampleData
@@ -34,7 +38,10 @@ def Ib():
     """
     # pytest is configured in vscode at the root
     FNAME = pathlib.Path('tests/example_data/tmy_35.015_25.755_2005_2020.csv')
-    pvgis = pd.read_csv(FNAME, header=16, nrows=8776-16, parse_dates=['time(UTC)'], engine='python') 
+    pvgis = pd.read_csv(FNAME, header=16, nrows=8776-16, 
+            parse_dates=['time(UTC)'], 
+            date_format = custom_date_parser, 
+            engine='python') 
     Ib = pvgis.loc[:,'Gb(n)']
     return Ib
 
