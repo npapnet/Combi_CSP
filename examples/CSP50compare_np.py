@@ -1,4 +1,14 @@
-# new OOP example of comparison
+
+#%% [markdown]
+'''
+@author: N. Papadakis
+
+# Scope
+
+This is an example of comparison between the solar tower and solar trough technologies using an oop approach. 
+This is a rewrite of the code in CSP50compar.py by G. Arnaoutakis which used a procedural approach.
+'''
+
 #%%
 import pathlib
 import pandas as pd
@@ -16,21 +26,28 @@ from CombiCSP.storage import Tr
 
 from CSP50_common_econ import *   # this is a development hack to avoid duplication
 #import pcm
-#%%
 
-#%% Set Site location
+
+#%%[markdown]
+'''
+# Code
+## Set Site location
+
+The follwoing sets the location of the site in Crete
+'''
+#%% 
+sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
 sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
 
 hoy = HOYS_DEFAULT
-#%% Imported from CSPEcon ==========================================================================================
-# from CSPecon import csp_area_costs, power_block_cost, csp_energy_price \
-#     ,csp_discount_rate, oil_price, Eoil
 
-# from CSPCret import Ptrough, Etrough
+#%%[markdown]
+'''
+## Read meteo data
 
+REad the Irradiance data from a file (the code can download from pvgis, but this is for offline use and development purposes).
+'''
 
-
-# End of Import from CSPEcon ==========================================================================================
 #%%
 # read data from local file
 "tmy_35.010_26.130_2007_2016.csv"#Atherinolakos
@@ -40,7 +57,19 @@ Ib = pvgis_data.loc[:,'Gb(n)']
 #Ib = ineichen().dni
 capital_csp = 5000000
 
+#%%[markdown]
+'''
+## Define the solar tower 
 
+The following defines the solar tower and calculates the power output for the given irradiance data.
+
+- Ar: receiver area [m2] pp.44 in Pacheco
+- alt: Height above sea level [m]
+- Ht: Tower height [km]
+
+
+'''
+#%%
 # Tower dimensions
 Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
 alt = 200*10e-3 #Height above sea level [m]
@@ -59,7 +88,22 @@ stc =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1,
 oTow = stc.perform_calc(Ib,transmittance=1)
 
 #%% [markdown]
-# The following uses a class to perform the analysis. 
+"""
+## Economical Analysis of Solar Tower
+
+The following line creates an instance of the Economic_environment class which contains the oil price and the currency units
+and has methods that can be used to calculate the economic parameters of the solar tower.
+
+The following lines iterate over a range of helistat areas and calculate the cash flow and the scenaria for each area.
+
+The data are stores in lists for further analysis:
+- area_list3: the heliostat area
+- cash_flow_list3: the cash flow
+- tow_scenaria3: the scenarios parameters
+
+TODO: I need to change from tuple to dictionary for the output of the scenarios or create another container class.
+
+"""
 #%%
 
 ee = Economic_environment(

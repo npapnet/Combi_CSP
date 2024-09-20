@@ -61,7 +61,7 @@ plt.plot(a.hod, a.Power_MW, '.')
 # %%
 # plot a bivariate kde for x hour of data, y power
 import seaborn as sns
-sns.kdeplot(x=a.hod, y=a.Power_MW, cmap='viridis', shade=True, cbar=True)
+sns.kdeplot(x=a.hod, y=a.Power_MW, cmap='viridis', fill=True, cbar=True)
 
 # %%
 plt.plot(a.Ib_n, a.Power_MW, '.')
@@ -71,5 +71,8 @@ plt.title('Tower Power vs Irradiance')
 # %%
 # create a subset with Ib_n > 0
 a_g0 = a[a.Ib_n > 0]
-sns.kdeplot(x=a_g0.Ib_n, y=a_g0.Power_MW, cmap='viridis', shade=True, cbar=True)
+sns.kdeplot(x=a_g0.Ib_n, y=a_g0.Power_MW, cmap='viridis', fill=True, cbar=True)
+plt.xlabel('Irradiance ($W/m^2$)')
+plt.ylabel('Power (MW)')
+plt.grid()
 # %%
