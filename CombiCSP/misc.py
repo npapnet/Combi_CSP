@@ -88,7 +88,7 @@ class OutputContainer():
         Returns:
            float : the total power per year in [MWh]
         """        
-        return integrate.trapz(self.data).round(2)
+        return integrate.trapezoid(self.data).round(2)
     @property
     def CF(self)->float: 
         """TODO Capacity factor?
@@ -167,9 +167,9 @@ def compare_date(date_str:str, tower, trough, Ib:pd.Series, save_to_file:bool = 
     plt.xticks(rotation=30)
 
 
-    Ens = integrate.trapz(trough.incident_energy_on_system(alignment='NS', Ib=Ib)).round(2)
-    Eew = integrate.trapz(trough.incident_energy_on_system(alignment='EW', Ib=Ib) ).round(2)
-    Etow = integrate.trapz(tower.incident_energy_on_system(Ib)).round(2)
+    Ens = integrate.trapezoid(trough.incident_energy_on_system(alignment='NS', Ib=Ib)).round(2)
+    Eew = integrate.trapezoid(trough.incident_energy_on_system(alignment='EW', Ib=Ib) ).round(2)
+    Etow = integrate.trapezoid(tower.incident_energy_on_system(Ib)).round(2)
     print("Total incident energy of NS Solar Trough ={} [MWh]".format(Ens))
     print("Total incident energy of NS Solar Trough ={} [MWh]".format(Eew))
 

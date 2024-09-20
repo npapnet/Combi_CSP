@@ -4,7 +4,7 @@
     @Date: 2022/  
     @Description: Concentrating Solar Power plants
 """
-
+#%%
 #TODO this module contains unused functions (not  tested)
 #TODO    theta_transversal  function exists twice
 

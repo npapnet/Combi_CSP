@@ -41,6 +41,7 @@ The following **mainstream** packages are required for this library (most of the
 - scipy
 - pandas
 - ipykernel
+- seaborn
 
 Additional libraries are:
 

@@ -80,7 +80,7 @@ class CSPSystemCombination():
             otws.append(ostwc.perform_calc(hoy=hoy, Ib=Ib, **tow_args))
         otrs = []
         for ostrc in self._trough_lst:
-            assert isinstance(ostwc, SolarTroughCalcs)
+            assert isinstance(ostrc, SolarTroughCalcs)
             otrs.append(ostrc.perform_calc(hoy=hoy, Ib=Ib, **trough_args))
         
         return CCSP_Result_Container(towers= otws, troughs=otrs)

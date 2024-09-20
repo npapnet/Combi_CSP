@@ -92,8 +92,8 @@ strc =  SolarTroughCalcs(foc_len=foc_len, N=N,
 scmb = CSPSystemCombination(tow_lst=[stc], trough_lst=[strc])
 
 #%% Perform analysis 
-tow_args = {'Trans':1, 'nG':0.97}
-trough_args= {'Tr': 318}
+tow_args = {'transmittance':1, 'nG':0.97}
+trough_args= {'Tr': 318, 'alignment':"NS"}
 scmb.perform_calc(hoy=HOYS_DEFAULT,Ib=Ib, tow_args=tow_args, trough_args=trough_args)
 #%%
 #%%
