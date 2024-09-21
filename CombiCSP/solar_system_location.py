@@ -13,20 +13,25 @@ import pvlib
 HOYS_DEFAULT = np.arange(1, 8761, 1) # hours of year
 
 class SolarSystemLocation:
-    def __init__(self, lat:float,  lon:float, mer:float,dt_gmt:float, alt:float=0):
+    def __init__(self, lat:float,  lon:float, 
+                 dt_gmt_hr:float, 
+                 mer:float=0, # removed because it was not used. Probaly this refers to Local Standard Time Meridian (LSTM)
+                 alt:float=0):
         """class that contains the location of the system 
 
         Args:
-            lat (float): longitude of system 
-            lon (float): longitude of system
-            mer (float):  for Greece check to replace with 15 * dt_gmt (TODO better description)
-            dt_gmt (float): time difference between Greenwich Mean Time
+            lat (float): latitude of system in degrees (E-W in [-180,180])
+            lon (float): longitude of system in degrees (N-S in [-90,90])
+            mer (float):  for Greece check to replace with 15 * dt_gmt (TODO better description) see https://www.pveducation.org/pvcdrom/properties-of-sunlight/solar-time
+            dt_gmt_hr (float): time difference between Greenwich Mean Time in hours
             alt (float): altitude of system (in m) (default: 0  - sea level)
         """        
-        self.dt_gmt = dt_gmt # 
-        self.lat = lat # Crete
-        self.mer = mer # 
-        self.lon = lon # Crete 35.2401° N, 24.8093° E [east negative, west positive
+        self.dt_gmt = dt_gmt_hr # 
+        self.lat_deg = lat # Crete
+        self.lon_deg = lon # Crete 35.2401° N, 24.8093° E [east negative, west positive
+        # self.mer = mer # TODO REMOVE mer from the init 
+        # self.alt = alt # altitude of the system in meters above sea level
+        
 
     @property
     def lat_rad(self)->float:
@@ -35,7 +40,8 @@ class SolarSystemLocation:
         Returns:
             _type_: _description_
         """        
-        return np.radians(self.lat)
+        return np.radians(self.lat_deg)
+    
     @property	
     def long_rad(self)->float:
         """return longitude in radians
@@ -43,9 +49,8 @@ class SolarSystemLocation:
         Returns:
             float: _description_
         """        
-        return np.radians(self.long)
+        return np.radians(self.lon_deg)
     
-    #%% ========================================== air mass
     def air_mass(self, hoy:np.array=HOYS_DEFAULT, method:str= 'wiki' ):
         """wrapper function for the different air mass
         
@@ -67,16 +72,19 @@ class SolarSystemLocation:
         return dic.get(method,None)(hoy)
 
     def _AM_wiki(self, hoy:np.array=HOYS_DEFAULT): # Air mass https://en.wikipedia.org/wiki/Air_mass_(solar_energy)
-        AM =  1 / np.cos(self.z(hoy))
+        AM =  1 / np.cos(self.z_rad(hoy))
         return AM
+    
     def _AM_Kasten(self, hoy:np.array=HOYS_DEFAULT):
         '''F. Kasten, A new table and approximation formula for the relative optical air mass, 
         Arch. Met. Geoph. Biokl. B. 14 (1965) 206–223. https://doi.org/10.1007/BF02248840.'''
-        return 1 / (np.cos(self.z(hoy)) + 0.6556 * (6.379 - self.z(hoy))**-1.757)
+        return 1 / (np.cos(self.z_rad(hoy)) + 0.6556 * (6.379 - self.z_rad(hoy))**-1.757)
+    
     def _AM3_KastenYoung(self, hoy:np.array=HOYS_DEFAULT):
         '''F. Kasten, A.T. Young, Revised optical air mass tables and approximation formula, 
         Appl. Opt., AO. 28 (1989) 4735–4738. https://doi.org/10.1364/AO.28.004735.'''
-        return 1 / (np.cos(self.z(hoy)) + 0.50572 * (6.07995 - self.z(hoy))**-1.6364)
+        return 1 / (np.cos(self.z_rad(hoy)) + 0.50572 * (6.07995 - self.z_rad(hoy))**-1.6364)
+    
     def _AM_Shoenberg(self, hoy:np.array=HOYS_DEFAULT):
         '''E. Schoenberg, Theoretische Photometrie, in: K.F. Bottlinger, A. Brill, E. Schoenberg, 
         H. Rosenberg (Eds.), Grundlagen der Astrophysik, Springer, Berlin, Heidelberg, 1929: pp. 1–280. 
@@ -84,7 +92,7 @@ class SolarSystemLocation:
         Re = 6371 # radius of the Earth [in km]
         yatm = 9 # effective height of the atmosphere [in km]
         r = Re / yatm
-        return np.sqrt((r * np.cos(self.z(hoy)))**2 + 2 * r + 1) - r * np.cos(self.z(hoy))
+        return np.sqrt((r * np.cos(self.z_rad(hoy)))**2 + 2 * r + 1) - r * np.cos(self.z_rad(hoy))
 
     def tsol(self, hoy:np.array=HOYS_DEFAULT): # solar time [in decimal hours] introduce if function for east/west<<<<<<<<<
         """returns solar time 
@@ -100,21 +108,26 @@ class SolarSystemLocation:
 
         Returns:
             _type_: _description_
-        """    
-        return hoy + (4*(self.lon-15*self.dt_gmt) + EoT(hoy))/60 # [60 min/h]
+        """
+        time_correction_factor = 4*(self.lon_deg-15*self.dt_gmt) + EoT(hoy)
+        return hoy + (time_correction_factor)/60 # [60 min/h]
 
 
     def W(self, hoy:np.array=HOYS_DEFAULT): # solar hour angle [in degrees]
         #TODO rename to Omega
-        '''given than for tsol = 12h it should be ω = 0ο and for the solar time range
-        tsol = 0 – 24h the solar hour angle ranges from 0o to ±180'''
-        return 15 * (self.tsol(hoy) - 12) # 360deg/24h = 15deg/h
+        ''' Returns the solar hour in degrees. (the angle between the sun and the local meridian.)
 
-    def ele(self, hoy:np.array=HOYS_DEFAULT): # solar elevation angle or solar height [in radians]
-        return np.arcsin(np.cos(np.radians(self.lat)) * np.cos(d(hoy)) * np.cos(np.radians(self.W(hoy))) \
-            + np.sin(np.radians(self.lat)) * np.sin(d(hoy)))
+        for tsol = 12h it should be ω = 0ο and for the solar time range
+        tsol = 0 – 24h the solar hour angle ranges from 0o to ±180
+        '''
+        solar_time = self.tsol(hoy)
+        return 15 * (solar_time - 12) # 360deg/24h = 15deg/h
 
-    def z(self, hoy:np.array=HOYS_DEFAULT):
+    def ele_rad(self, hoy:np.array=HOYS_DEFAULT): # solar elevation angle or solar height [in radians]
+        return np.arcsin(np.cos(np.radians(self.lat_deg)) * np.cos(d(hoy)) * np.cos(np.radians(self.W(hoy))) \
+            + np.sin(np.radians(self.lat_deg)) * np.sin(d(hoy)))
+
+    def z_rad(self, hoy:np.array=HOYS_DEFAULT):
         """Returns the solar zenith angle in radians
 
         solar zenith angle [in radians] https://en.wikipedia.org/wiki/Solar_zenith_angle   
@@ -124,10 +137,10 @@ class SolarSystemLocation:
         Returns:
         np.array: solar zenith angle in radians"""
 
-        return np.arccos(np.cos(np.radians(self.lat)) * np.cos(d(hoy)) * np.cos(np.radians(self.W(hoy))) 
-        + np.sin(np.radians(self.lat)) * np.sin(d(hoy)))
+        return np.arccos(np.cos(np.radians(self.lat_deg)) * np.cos(d(hoy)) * np.cos(np.radians(self.W(hoy))) 
+        + np.sin(np.radians(self.lat_deg)) * np.sin(d(hoy)))
 
-    def azim(self, hoy:np.array=HOYS_DEFAULT)->np.array: 
+    def azim_rad(self, hoy:np.array=HOYS_DEFAULT)->np.array: 
         """Returns the solar azimuth angle in radians
 
         Args:
@@ -136,7 +149,7 @@ class SolarSystemLocation:
         Returns:
             np.array: solar azimuth angle in radians
         """   
-        return np.arcsin(np.cos(d(hoy)) * np.sin(np.radians(self.W(hoy))) / np.cos(self.ele(hoy)))
+        return np.arcsin(np.cos(d(hoy)) * np.sin(np.radians(self.W(hoy))) / np.cos(self.ele_rad(hoy)))
 
     def Ib_from_csv(self,FNAME:pathlib.Path)->pd.Series:
         """loads data from a local csv folder
@@ -170,12 +183,12 @@ class SolarSystemLocation:
 
         times = pd.date_range(start='2020-01-01', periods=8760, freq='1H', tz=tz) #end='2020-12-31', 
         #TODO allow for modification of the times of start and end
-        solpos = pvlib.solarposition.get_solarposition(times, self.lat, self.lon)
+        solpos = pvlib.solarposition.get_solarposition(times, self.lat_deg, self.lon_deg)
         apparent_zenith = solpos['apparent_zenith']
         airmass = pvlib.atmosphere.get_relative_airmass(apparent_zenith)
         pressure = pvlib.atmosphere.alt2pres(altitude)
         airmass = pvlib.atmosphere.get_absolute_airmass(airmass, pressure)
-        linke_turbidity = pvlib.clearsky.lookup_linke_turbidity(times,  self.lat, self.lon)
+        linke_turbidity = pvlib.clearsky.lookup_linke_turbidity(times,  self.lat_deg, self.lon_deg)
         dni_extra = pvlib.irradiance.get_extra_radiation(times)
         pvlib_data = pvlib.clearsky.ineichen(apparent_zenith, airmass, linke_turbidity, altitude, dni_extra)
         self.Ib= pvlib_data.dni
@@ -186,7 +199,7 @@ class SolarSystemLocation:
 #  def thetai(hoy:np.array=HOYS_DEFAULT, inclination=90, azimuths=0): # incidence angle [in radians]
 #
 #     g = deg(azim(hoy)) - azimuths # if surface looks due S then azimuths=0
-#     return np.arccos(np.cos(ele(hoy)) * np.sin(np.radians(inclination)) * np.cos(np.radians(g)) 
+#     return np.arccos(np.cos(ele(hoy)) * np.sin(np.radians(inclination)) * np.cos(np.radians(g))
 #         + np.sin(ele(hoy)) * np.cos(np.radians(inclination)))
 
 # ssCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
@@ -204,7 +217,7 @@ def get_pvgis_tmy_data(sysloc:SolarSystemLocation)->pd.DataFrame:
     Returns:
         pd.DataFrame: _description_
     """    
-    latitude = sysloc.lat
+    latitude = sysloc.lat_deg
     longitude = sysloc.long
     OUTPUTFORMAT = 'json'
 
@@ -220,7 +233,11 @@ def get_pvgis_tmy_data(sysloc:SolarSystemLocation)->pd.DataFrame:
 #%% Equations of time
 
 def EoT(hoy:np.array=HOYS_DEFAULT): # equation of time [in minutes]
-    gamma = 360*(hoy-1)/365
+    """
+    Equation of time from Duffie & Beckman and attributed to Spencer
+    (1971) and Iqbal (1983) [in minutes]
+    """
+    gamma = 360*(hoy-1)/365 #FIXME  hoy is in hours, while the equation should be in days
     return 2.2918*(0.0075+0.1868*np.cos(np.radians(gamma))-3.2077*np.sin(np.radians(gamma)) \
         -1.4615*np.cos(np.radians(2*gamma))-4.089*np.sin(np.radians(2*gamma)))
 

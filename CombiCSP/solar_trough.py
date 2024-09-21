@@ -12,10 +12,23 @@ from scipy.optimize import minimize
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT
 from CombiCSP.solar_system_location import SolarSystemLocation, d
 
-
+STEFAN_BOLTZZMAN_CONSTANT = 5.67 * 1e-8 # [W/m2K4] Stefan – Boltzman constant
 class SolarTroughCalcs():
     _hourly_results : OutputContainer = None
-    
+    N:int = None # number of units
+    L:float= None # solar trough unit length
+    Ws:float = None # width between rows
+    receiver_dia_m:float = None # tube outer diameter
+    collector_width_m:float = None # collector width
+    foc_len:float = None # focal length
+
+    # calculation constants
+    optical_efficiency:float = 75 # [%] Optical efficiency of collector 74% INDITEP in pp.7 Fraidenraich13, pp.4 Zarza06
+    epsilon:float = 1 # the emissivity of the receiver’s material https://en.wikipedia.org/wiki/Emissivity
+    #Tr = 350 # [oC] the working fluid temperature in the receiver DISS pp.3,7 in Zarza04
+    alpha:float = 1 # absorptivity of the receiver
+    nR:float = 0.375 # isentropic efficiency Salazar17
+
     def __init__(self,
         foc_len = 0.88 
         ,N = 1800 
@@ -44,8 +57,8 @@ class SolarTroughCalcs():
         self.N = N
         self.L = L
         self.Ws = Ws
-        self.Wr = Wr
-        self.Wc = Wc 
+        self.receiver_dia_m = Wr
+        self.collector_width_m = Wc 
 
     def print_system_summary(self):
         print(f"""
@@ -54,8 +67,8 @@ class SolarTroughCalcs():
 -> Number of units  (   N   ) = {self.N}      
 -> Unit length      (   L   ) =  {self.L} 
 -> Unit spacing?    (   Ws  ) = {self.Ws} 
--> Receiver width   (   Wr  ) = {self.Wr}
--> Collector width  (   Wc  ) = {self.Wc}
+-> Receiver width   (   Wr  ) = {self.receiver_dia_m}
+-> Collector width  (   Wc  ) = {self.collector_width_m}
 --------  Derived Quantities
 -> Collector area   (   Ac  ) = {self.Ac()}
 -> Receiver area    (   Ar  ) = {self.Ar()}
@@ -80,7 +93,7 @@ class SolarTroughCalcs():
         Returns:
             float: The collector area in [m^2]
         """        
-        return self.Wc * self.L * self.N
+        return self.collector_width_m * self.L * self.N
     
     def Ac(self)->float:
         """collector area in m^2
@@ -90,7 +103,7 @@ class SolarTroughCalcs():
         Returns:
             float: collector area in m^2
         """        
-        return self.Wc * self.L * self.N
+        return self.collector_width_m * self.L * self.N
 
     def Ar(self)->float:
         """returns the receiver area. 
@@ -103,7 +116,7 @@ class SolarTroughCalcs():
         Returns:
             float: total receiver area in m^2
         """    
-        return self.Wr * self.L * self.N
+        return self.receiver_dia_m * self.L * self.N
     
     @property
     def Cg(self)->float:
@@ -199,8 +212,8 @@ class SolarTroughCalcs():
         Returns:
             np.array: _description_
         """        
-        g = np.degrees(self._sl.azim(hoy)) - azimuths # if surface looks due S then azimuths=0
-        elev = self._sl.ele(hoy)
+        g = np.degrees(self._sl.azim_rad(hoy)) - azimuths # if surface looks due S then azimuths=0
+        elev = self._sl.ele_rad(hoy)
         return np.arccos(np.cos(elev) * np.sin(np.radians(inclination)) * np.cos(np.radians(g)) 
             + np.sin(elev) * np.cos(np.radians(inclination)))
 
@@ -225,7 +238,10 @@ class SolarTroughCalcs():
         #TODO needs rad despite thetai(hoy) already in rad???
         return np.cos(np.radians(self.thetai(hoy))) + 0.02012 * self.thetai(hoy) - 0.01030 * self.thetai(hoy)**2 
 
-    def di_sst(self, hoy, Ib, costhetai, Tr, nG:float = 0.97)->pd.Series:
+    def di_sst(self, hoy, Ib, costhetai, Tr, nG:float = 0.97
+               , Ta = 15 # [oC] ambient temperature close to the receiver 15 oC 288K
+            ,Tin = 200 # [oC] working fluid inlet temperature to the receiver DISS pp.3,7 in Zarza04
+            )->pd.Series:
         """Calculates the total power of the parabolic system
 
         R.K. McGovern, W.J. Smith, Optimal concentration and temperatures of solar thermal power plants,
@@ -246,40 +262,37 @@ class SolarTroughCalcs():
         Returns:
             _type_: power in [MW].
         """    
-        Wc = self.Wc # width of collectors in [m]
-        Wr = self.Wr # width of receiver in [m]
+        Wc = self.collector_width_m # width of collectors in [m]
+        Wr = self.receiver_dia_m # width of receiver in [m]
         Ws = self.Ws # width of spacing between collectors in [m]
         L = self.L   # length of units [m]
         N = self.N   # number of units
         
         IAM = self.IAM_tro(hoy) # incidence angle modifier 
         
+        # Thermal Energy input (in the duration of an hour)
+        Qin = Ib * costhetai* IAM * self.Ac() * self.optical_efficiency/100 # Eq. 4  in McGovern12
         
-        Effopt = 75 # [%] Optical efficiency of collector 74% INDITEP in pp.7 Fraidenraich13, pp.4 Zarza06
-        
-        Qin = Ib * costhetai* IAM * self.Ac() * Effopt/100 # Eq. 4  in McGovern12
-        
-        epsilon = 1 # the emissivity of the receiver’s material https://en.wikipedia.org/wiki/Emissivity
-        sigma = 5.67 * 1e-8 # [W/m2K4] Stefan – Boltzman constant
-        #Tr = 350 # [oC] the working fluid temperature in the receiver DISS pp.3,7 in Zarza04
-        Ta = 15 # [oC] ambient temperature close to the receiver 15 oC 288K
-        Tin = 200 # [oC] working fluid inlet temperature to the receiver DISS pp.3,7 in Zarza04
-        alpha = 1 # absorptivity of the receiver
-
-        Qrad = epsilon * sigma * self.Ar() * (CtoK(Tr)**4-CtoK(Ta)**4) # check model from Broesamle
+        # Radiation losses
+        Qrad = self.epsilon * STEFAN_BOLTZZMAN_CONSTANT * self.Ar() * (CtoK(Tr)**4-CtoK(Ta)**4) # check model from Broesamle
+        # Convection losses
         Qconv = 0
-        Qnet = alpha * Qin - Qrad - Qconv # Eq. 8 in McGovern12
+        # Energy Balance
+        Qnet = self.alpha * Qin - Qrad - Qconv # Eq. 8 in McGovern12
         
-        # Turbine
+        # ==   Carnot calulation for the power output of the system (not used)
+        # Turbine 
         Tcond = 30 # [oC] condenser temperature
         Ts = 565 # [oC] steam temperature
         n_Carnot = 1 - (CtoK(Tcond)/CtoK(Ts)) # Eq. 15  in McGovern12
+        # =============================
 
-        nR = 0.375 # isentropic efficiency Salazar17
+        # power output 
+        
         if Qnet.all() <= 0:
             P = 0
         else:
-            P = Qnet * nR * nG
+            P = Qnet * self.nR * nG
         return P/1e6 # convert W to MW
     
     def incident_energy_on_system(self, alignment:str,  Ib:pd.Series, hoy:np.array = HOYS_DEFAULT)->pd.Series:
@@ -329,8 +342,8 @@ class SolarTroughCalcs():
         N = self.N if N is None else N
         L = self.L if L is None else L
         Ws = self.Ws if Ws is None else Ws
-        Wr = self.Wr if Wr is None else Wr
-        Wc = self.Wc if Wc is None else Wc
+        Wr = self.receiver_dia_m if Wr is None else Wr
+        Wc = self.collector_width_m if Wc is None else Wc
         slobj = self._sl if slobj is None else slobj
         return SolarTroughCalcs(
             foc_len = foc_len 

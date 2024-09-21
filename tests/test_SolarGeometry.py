@@ -18,7 +18,7 @@ def hoy_ex1():
 def Crete():
     """Example site
     """    
-    return SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
+    return SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
 
 @pytest.fixture
 def R():
@@ -75,15 +75,24 @@ class Test_EOT_zen_ele:
     def test_ele(self, hoy_ex1, Crete ):
         expected = -1.3257002183993918 
         # assert sgh.ele(hoy_ex1)[0] == pytest.approx(expected, abs=1e-3)
-        assert Crete.ele(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
+        assert Crete.ele_rad(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
         
     def test_z(self,hoy_ex1, Crete ):
         expected =  2.8964965451942883 
         # assert sgh.z(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
-        assert Crete.z(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
+        assert Crete.z_rad(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
 
     def test_azim(self,hoy_ex1, Crete):
         expected =  -0.577725020643127
         # assert sgh.azim(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
-        assert Crete.azim(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
+        assert Crete.azim_rad(hoy_ex1)[0] == pytest.approx( expected, abs=1e-3)
+    
+
+# def test_solar_hour_angle_W_deg(Crete):
+#     Crete_offset = -7.8807413669699855
+#     assert Crete.W(12) == pytest.approx(0+Crete_offset, abs=1e-3)
+#     # assert Crete.W(0) == pytest.approx(180-Crete_offset, abs=1e-3)
+#     assert Crete.W(24) == pytest.approx(180-Crete_offset, abs=1e-3)
+#     assert Crete.W(6) == pytest.approx(-90+Crete_offset, abs=1e-3)
+#     assert Crete.W(11) == pytest.approx(-15+Crete_offset, abs=1e-3)
 

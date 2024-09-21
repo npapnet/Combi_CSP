@@ -22,8 +22,8 @@ def Tr23km(alt, ssloc:solar_system_location, hoy:np.array=HOYS_DEFAULT): # Trans
     a1 = 1.01 * (0.5055 + 0.00595 * (6.5 - alt)**2) #0.7559
     k = 1.00 * (0.2711 + 0.01858 * (2.5 - alt)**2) #-0.3878
     #TODO NP: The correct function accordint to the paper should be:
-    return a0 + a1 * np.exp(-k/np.cos(ssloc.z(hoy)))
-    # return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(ssloc.z(hoy)))) # needs rad despite z(hoy) already in rad???
+    return a0 + a1 * np.exp(-k/np.cos(ssloc.z_rad(hoy)))
+    # return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(ssloc.z_rad(hoy)))) # needs rad despite z(hoy) already in rad???
 
 
 def Tr5km(alt,ssloc:solar_system_location, hoy:np.array=HOYS_DEFAULT): # Transmittance % Mid latitudes winter
@@ -33,14 +33,14 @@ def Tr5km(alt,ssloc:solar_system_location, hoy:np.array=HOYS_DEFAULT): # Transmi
     a1 = 1.01*(0.7678+0.0010*(6.5-alt)**2)
     k = 1.00*(0.2490+0.0810*(2.5-alt)**2)
     #TODO NP: The correct function accordint to the paper should be:
-    # return a0 + a1 * np.exp(-k/np.cos(z(hoy)))
-    return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(ssloc.z(hoy)))) # needs rad despite z(hoy) already in rad???
+    # return a0 + a1 * np.exp(-k/np.cos(.z_rad(hoy)))
+    return a0 + a1 * np.exp(-k)/np.exp(np.cos(np.radians(ssloc.z_rad(hoy)))) #FIXME needs rad despite z(hoy) already in rad???
 
 def TrD23km(R): 
     """transmmitance at 23km 
 
     Args:
-        R (_type_): _description_
+        R (_type_):  slant range in [km]
 
     Returns:
         _type_: _description_
@@ -51,7 +51,7 @@ def TrD5km(R):
     """transmmitance at 23km 
 
     Args:
-        R (_type_): _description_
+        R (_type_):  slant range in [km]
 
     Returns:
         _type_: _description_

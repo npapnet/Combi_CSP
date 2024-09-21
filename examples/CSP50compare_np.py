@@ -36,8 +36,8 @@ from CSP50_common_econ import *   # this is a development hack to avoid duplicat
 The follwoing sets the location of the site in Crete
 '''
 #%% 
-sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
-sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
+sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
 
 hoy = HOYS_DEFAULT
 
@@ -82,8 +82,8 @@ Ht = 0.1 #np.arange(0.1,0.4,0.1) # Tower height [km]
 # Ht = 0.1 #np.arange(0.1,0.4,0.1) # Tower height [km]
 # A_helio = 225000 # SolarII 82,750 m² for 10MW https://en.wikipedia.org/wiki/The_Solar_Project
 
-stc =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, 
-        Ar = 99.3 , A_helio = 225000,
+stc =  SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, 
+        Ar_m2 = 99.3 , A_helio_m2 = 225000,
         slobj=sslCrete)
 oTow = stc.perform_calc(Ib,transmittance=1)
 
@@ -187,8 +187,8 @@ tmp_res_Dic =ee.economics_for_SolarTrough(
 A_helio_optNS = 125000
 N_opt_NS = 800
 
-stc_opt =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, 
-        Ar = 99.3 , A_helio = A_helio_optNS,
+stc_opt =  SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, 
+        Ar_m2 = 99.3 , A_helio_m2 = A_helio_optNS,
         slobj=sslCrete)
 oTow = stc_opt.perform_calc(Ib,transmittance=1)
 strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS, 

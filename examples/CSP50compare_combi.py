@@ -1,7 +1,19 @@
-# new OOP example of comparison
-# 
-# this one uses the solar_combi_system::CSPSystemCombination
-# to perform the calculation for a combination system
+# %% [markdown]
+"""---
+title: CP50 example
+author: N. Papadakis
+date: 21/Sep/24
+numbersections: true
+---
+"""
+#%%[markdown]
+"""
+# Example of comparing the economics of a combined system ( solar tower and a solar trough system)
+
+This one uses the solar_combi_system::CSPSystemCombination
+to perform the calculation for a combination system
+
+"""
 #%%
 import pathlib
 import pandas as pd
@@ -22,10 +34,13 @@ from CombiCSP.storage import Tr
 from CSP50_common_econ import *   # this is a development hack to avoid duplication
 
 #%% [markdown]
-# Set the Site location 
-# at Crete::Ierapetra(lat=35, lon=24
+"""
+## Set the site
+Set the Site location 
+at Crete::Ierapetra(lat=35, lon=24
+"""
 #%% 
-sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
+sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
 
 #%% [markdown]
 # ## read the radiation datadata from local file
@@ -39,23 +54,24 @@ Ib = pvgis_data.loc[:,'Gb(n)']
 # capital_csp = 5000000
 
 #%%[markdown]
-# ## Define tower object
-# Dimensions that are not changing:
-# - receiver area
-# - altitude 
-# - Tower Height 
-# 
+"""
+## Define tower object
+Dimensions that are not changing:
+
+- receiver area [$m^2$]
+- altitude [km]
+- Tower Height km]
+"""
 # Define solar tower object oTow
 #%%
-alt = 200*10e-3 #Height above sea level [m] #FIXME this si probably [km] instead of [m]
 Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
+alt = 200*10e-3 #Height above sea level [m] #FIXME this si probably [km] instead of [m]
 Ht = 0.1 #np.arange(0.1,0.4,0.1) # Tower height [km]
 # A_helio = 225000 # SolarII 82,750 m² for 10MW https://en.wikipedia.org/wiki/The_Solar_Project
-
 # Define object Tower related dimensions **stc**
 
-stc =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, 
-        Ar = 99.3 , A_helio = 225000,
+stc =  SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, 
+        Ar_m2 = 99.3 , A_helio_m2 = 225000,
         slobj=sslCrete)
 # oTow = stc.perform_calc(Ib,transmittance=1)
 
@@ -171,8 +187,8 @@ tmp_res_Dic =ee.economics_for_SolarTrough(
 A_helio_optNS = 125000
 N_opt_NS = 800
 
-stc_opt =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, 
-        Ar = 99.3 , A_helio = A_helio_optNS,
+stc_opt =  SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, 
+        Ar_m2 = 99.3 , A_helio_m2 = A_helio_optNS,
         slobj=sslCrete)
 oTow = stc_opt.perform_calc(Ib,transmittance=1)
 strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS, 

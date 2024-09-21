@@ -12,26 +12,52 @@ from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT, SolarSystemLocation
 from CombiCSP.solar_system_location import SolarSystemLocation
 
   
+STEFAN_BOLTZMANN_CONSTANT = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
+
 class SolarTowerCalcs():
     _hourly_results : OutputContainer = None
+    optical_efficiency:float= 100 # heliostat optical effiency [%] 65% pp.24 in Pacheco
+    
+    nR:float = 0.412 # SAM default
+    reflectivity:float  = 1 # reflectivity [%] 1 if IAM is IAM_tow(hoy)
+    epsilon:float  = 1 # the emissivity of the receiver’s material https://en.wikipedia.org/wiki/Emissivity
+    alpha:float  = 1 # absorptivity of the receiver
+        
     def __init__(self, 
-        alt = 200*10e-3 
-        , Ht = 0.1
-        , Ar = 99.3 
-        , A_helio = 225000
+        alt_:float = 200*10e-3 
+        , Ht_km:float = 0.1
+        , Ar_m2:float = 99.3 
+        , A_helio_m2:float = 225000
         , slobj:SolarSystemLocation = None
         ):
-        self.Ar_m2 = Ar# receiver area [m2] pp.44 in Pacheco
-        self.alt_m = alt #Height above sea level [m]
-        self.Ht_km = Ht # Tower height [km]
-        self.A_helio_m2 = A_helio # SolarII 82,750 m² for 10MW https://en.wikipedia.org/wiki/The_Solar_Project
+        self.Ar_m2 = Ar_m2# receiver area [m2] pp.44 in Pacheco
+        self.alt_km = alt_ #Height above sea level (probably [km] uncertain TODO check with original code)
+        self.Ht_km = Ht_km # Tower height [km]
+        #A_helio = 71140 + 10260 # total heliostat area [m2] pp.22 in Pacheco
+        self.A_helio_m2 = A_helio_m2 # SolarII 82,750 m² for 10MW https://en.wikipedia.org/wiki/The_Solar_Project
         self.Ctow = self.A_helio_m2 / self.Ar_m2
         if slobj is None:
             raise ValueError('System location not found')
         else:
             self._sl = slobj
 
-    def perform_calc(self, Ib, transmittance=1, nG=0.97, hoy=HOYS_DEFAULT)->OutputContainer:
+    def params_as_dict(self)->dict:
+        """Returns the parameters of the solar tower as a dictionary	
+        """
+        return {
+            'alt_km':self.alt_km, 
+            'Ht_km':self.Ht_km, 
+            'Ar_m2':self.Ar_m2, 
+            'A_helio_m2':self.A_helio_m2,
+            'Ctow':self.Ctow
+            , 'optical_efficiency':self.optical_efficiency
+            , 'reflectivity':self.reflectivity
+            , 'nR':self.nR
+            , 'emissivity':self.epsilon
+            , 'absorptivity':self.alpha
+            }
+    
+    def perform_calc(self, Ib:pd.Series, transmittance=1, nG:float=0.97, hoy:np.array=HOYS_DEFAULT)->OutputContainer:
         """Performs solar tower calculations
 
         Args:
@@ -45,15 +71,20 @@ class SolarTowerCalcs():
         """        
         # data = solarII(Ib=Ib,Trans=transmittance, IAM=IAM_tow(hoy)
         
+        hourly_energy_yield = self.solarII(Ib=Ib,Trans=transmittance, nG=0.97, hoy=hoy)
         self._hourly_results = OutputContainer(
-            data = self.solarII(Ib=Ib,Trans=transmittance, nG=0.97, hoy=hoy),
-            A_helio=self.A_helio_m2, 
-            Ctow=self.Ctow,
-            Ib_N=Ib
+                data = hourly_energy_yield,
+                A_helio=self.A_helio_m2, 
+                Ctow=self.Ctow,
+                Ib_N=Ib
             )
         return self._hourly_results
     
-    def solarII(self, Ib:pd.Series,Trans:float, nG:float = 0.97, hoy:np.array=HOYS_DEFAULT)->pd.Series:
+    def solarII(self, Ib:pd.Series,Trans:float, nG:float = 0.97, hoy:np.array=HOYS_DEFAULT
+            , Trec_Celcius:float = 565 # the working fluid temperature in the receiver [oC] 565 oC 838K
+            , Ta_Celcius:float = 15 # ambient temperature close to the receiver [oC] 15 oC 288K
+            , Tin_Celcius:float = 290 # working fluid inlet temperature to the receiver [oC] 290 oC 563K
+            )->pd.Series:
         """Calculates the power of the solar tower with heliostat
     
         R.K. McGovern, W.J. Smith, Optimal concentration and temperatures of solar thermal power plants,
@@ -61,8 +92,6 @@ class SolarTowerCalcs():
         J.E. Pacheco, R.W. Bradshaw, D.B. Dawson, W.D. la Rosa, R. Gilbert, S.H. Goods, P. Jacobs, M.J. Hale, S.A. Jones, G.J. Kolb, M.R. Prairie, H.E. Reilly, S.K. Showalter, L.L. VANT-HULL, 
         Final Test and Evaluation Results from the Solar Two Project, n.d. https://core.ac.uk/reader/193342950 (accessed September 8, 2020).
     
-
-
         Args:
             Ib (pd.Series): direct irradiance
             Trans (float): transmissivity 
@@ -72,40 +101,32 @@ class SolarTowerCalcs():
             nG (float):  efficiency of generator Mosleh19 (Defaults to 0.97)
 
         Returns:
-            pd.Series: power in MW
+            pd.Series: power in MW (since the output is hourly, this can be considered as energy in MWh)
         """
         IAM  = self.IAM_tow(hoy=hoy)
-        A_helio = self.A_helio_m2
-        Ar = self.Ar_m2
+        Heliostat_area = self.A_helio_m2
+        ReceiverArea = self.Ar_m2
         
-        Effopt=100 # heliostat optical effiency [%] 65% pp.24 in Pacheco
-        #A_helio = 71140 + 10260 # total heliostat area [m2] pp.22 in Pacheco
-        R = 1 # reflectivity [%] 1 if IAM is IAM_tow(hoy)
-        Qin = Ib * R * Trans * IAM * A_helio * Effopt/100 # Eq. 17  in McGovern12
+        # Incident energy on the receiver
+        Qin = Ib * self.reflectivity * Trans * IAM * Heliostat_area * self.optical_efficiency/100 # Eq. 17  in McGovern12
         
-        epsilon = 1 # the emissivity of the receiver’s material https://en.wikipedia.org/wiki/Emissivity
-        sigma = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
-        Trec = 565 # the working fluid temperature in the receiver [oC] 565 oC 838K
-        Ta = 15 # ambient temperature close to the receiver [oC] 15 oC 288K
-        Tin = 290 # working fluid inlet temperature to the receiver [oC] 290 oC 563K
-        alpha = 1 # absorptivity of the receiver
-        #Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
-        
-        Qrad = epsilon * sigma * Ar * (CtoK(Trec)**4-CtoK(Ta)**4)
-        hconv = CtoK(Trec)/60 + 5/3 # [W/m2K] convection coefficient Eq. 20 in McGovern12
+        # Thermal energy radiated by the receiver
+        Qrad = self.epsilon * STEFAN_BOLTZMANN_CONSTANT * ReceiverArea * (CtoK(Trec_Celcius)**4-CtoK(Ta_Celcius)**4)
+
+        # Convection losses
+        hconv = CtoK(Trec_Celcius)/60 + 5/3 # [W/m2K] convection coefficient Eq. 20 in McGovern12
         '''D.L. Siebers, J.S. Kraabel, Estimating convective energy losses from solar central 
         receivers, Sandia National Lab. (SNL-CA), Livermore, CA (United States), 1984. 
         https://doi.org/10.2172/6906848.'''
-        Qconv = hconv * Ar * (CtoK(Trec) - CtoK(Ta))
+        Qconv = hconv * ReceiverArea * (CtoK(Trec_Celcius) - CtoK(Ta_Celcius))
         
-        Qnet = alpha * Qin - Qrad - Qconv # Eq. 8 in McGovern12
+        # Energy balance
+        Qnet = self.alpha * Qin - Qrad - Qconv # Eq. 8 in McGovern12
         
-        nR = 0.412 # SAM default
-
         if Qnet.all() <= 0: #<<<<<<<<<<<<<<<<<<< check with Qin
             P = 0
         else:
-            P = Qnet * nR * nG
+            P = Qnet * self.nR * nG
         return P/1e6 # convert W to MW
 
     # Incidence angle methods for towers
@@ -123,9 +144,19 @@ class SolarTowerCalcs():
         Returns:
             np.array : Incidence angle modifier of Tower in rad
         """    
-        return 1.66741484e-1 + 1.41517577e-2 * np.degrees(self._sl.z(hoy)) - 9.51787164e-5 * np.degrees(self._sl.z((hoy)))**2
+        zenith_deg = np.degrees(self._sl.z_rad(hoy))
+        return 1.66741484e-1 + 1.41517577e-2 * zenith_deg - 9.51787164e-5 * zenith_deg**2
     
     def incident_energy_on_system(self,  Ib:pd.Series, hoy:np.array = HOYS_DEFAULT)->pd.Series:
+        """Calculates the incident energy on the system
+
+        Args:
+            Ib (pd.Series): direct irradiance
+            hoy (np.array, optional): hour of year. Defaults to HOYS_DEFAULT.
+            
+        Returns:
+            pd.Series: incident energy on the system
+        """
         return Ib*self.IAM_tow(hoy)
 
     def mutate(self,   alt = None , Ht = None
@@ -146,15 +177,17 @@ class SolarTowerCalcs():
         Returns:
             _type_: _description_
         """        
-        alt = self.alt_m if alt is None else alt
+        alt = self.alt_km if alt is None else alt
         Ht = self.Ht_km if Ht is None else Ht
         Ar = self.Ar_m2 if Ar is None else Ar
         A_helio = self.A_helio_m2 if A_helio is None else A_helio
         slobj = self._sl if slobj is None else slobj
-        return SolarTowerCalcs(alt = alt, Ht=Ht, Ar=Ar, A_helio=A_helio, slobj=slobj)
+        return SolarTowerCalcs(alt_ = alt, Ht_km=Ht, Ar_m2=Ar, A_helio_m2=A_helio, slobj=slobj)
 
-    def find_area_for_max_MW(self,  target_MW :float, Ib, 
-        transmittance=1, nG=0.97, hoy=HOYS_DEFAULT)->float:
+    def find_area_for_max_MW(self, target_MW :float, 
+            Ib, 
+            transmittance=1, nG=0.97, 
+            hoy=HOYS_DEFAULT)->float:
         """finds the required area for the parameters of the solar tower
 
         Args:
@@ -175,57 +208,58 @@ class SolarTowerCalcs():
         return res.x[0]
 
 
-def solarII(Ib:pd.Series,Trans:float,IAM:np.array,A_helio:float,Ar:float, 
-            nG:float = 0.97)->pd.Series:
-    """Calculates the power of the solar tower with heliostat
+# %% Old obsolete code
+# def solarII(Ib:pd.Series,Trans:float,IAM:np.array,A_helio:float,Ar:float, 
+#             nG:float = 0.97)->pd.Series:
+#     """Calculates the power of the solar tower with heliostat
  
-    R.K. McGovern, W.J. Smith, Optimal concentration and temperatures of solar thermal power plants,
-    Energy Conversion and Management. 60 (2012) 226–232.
-    J.E. Pacheco, R.W. Bradshaw, D.B. Dawson, W.D. la Rosa, R. Gilbert, S.H. Goods, P. Jacobs, M.J. Hale, S.A. Jones, G.J. Kolb, M.R. Prairie, H.E. Reilly, S.K. Showalter, L.L. VANT-HULL, 
-    Final Test and Evaluation Results from the Solar Two Project, n.d. https://core.ac.uk/reader/193342950 (accessed September 8, 2020).
+#     R.K. McGovern, W.J. Smith, Optimal concentration and temperatures of solar thermal power plants,
+#     Energy Conversion and Management. 60 (2012) 226–232.
+#     J.E. Pacheco, R.W. Bradshaw, D.B. Dawson, W.D. la Rosa, R. Gilbert, S.H. Goods, P. Jacobs, M.J. Hale, S.A. Jones, G.J. Kolb, M.R. Prairie, H.E. Reilly, S.K. Showalter, L.L. VANT-HULL, 
+#     Final Test and Evaluation Results from the Solar Two Project, n.d. https://core.ac.uk/reader/193342950 (accessed September 8, 2020).
  
 
 
-    Args:
-        Ib (pd.Series): direct irradiance
-        Trans (float): transmissivity 
-        IAM (np.array): incidence angle modifier
-        A_helio (float): heliostat area in m^2
-        Ar (float): receiver area in m^2
-        nG (float):  efficiency of generator Mosleh19 (Defaults to 0.97)
+#     Args:
+#         Ib (pd.Series): direct irradiance
+#         Trans (float): transmissivity 
+#         IAM (np.array): incidence angle modifier
+#         A_helio (float): heliostat area in m^2
+#         Ar (float): receiver area in m^2
+#         nG (float):  efficiency of generator Mosleh19 (Defaults to 0.97)
 
-    Returns:
-        pd.Series: power in MW
-    """
-    Effopt=100 # heliostat optical effiency [%] 65% pp.24 in Pacheco
-    #A_helio = 71140 + 10260 # total heliostat area [m2] pp.22 in Pacheco
-    R = 1 # reflectivity [%] 1 if IAM is IAM_tow(hoy)
-    Qin = Ib * R * Trans * IAM * A_helio * Effopt/100 # Eq. 17  in McGovern12
+#     Returns:
+#         pd.Series: power in MW
+#     """
+#     Effopt=100 # heliostat optical effiency [%] 65% pp.24 in Pacheco
+#     #A_helio = 71140 + 10260 # total heliostat area [m2] pp.22 in Pacheco
+#     R = 1 # reflectivity [%] 1 if IAM is IAM_tow(hoy)
+#     Qin = Ib * R * Trans * IAM * A_helio * Effopt/100 # Eq. 17  in McGovern12
     
-    epsilon = 1 # the emissivity of the receiver’s material https://en.wikipedia.org/wiki/Emissivity
-    sigma = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
-    Trec = 565 # the working fluid temperature in the receiver [oC] 565 oC 838K
-    Ta = 15 # ambient temperature close to the receiver [oC] 15 oC 288K
-    Tin = 290 # working fluid inlet temperature to the receiver [oC] 290 oC 563K
-    alpha = 1 # absorptivity of the receiver
-    #Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
+#     epsilon = 1 # the emissivity of the receiver’s material https://en.wikipedia.org/wiki/Emissivity
+#     sigma = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
+#     Trec = 565 # the working fluid temperature in the receiver [oC] 565 oC 838K
+#     Ta = 15 # ambient temperature close to the receiver [oC] 15 oC 288K
+#     Tin = 290 # working fluid inlet temperature to the receiver [oC] 290 oC 563K
+#     alpha = 1 # absorptivity of the receiver
+#     #Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
     
-    Qrad = epsilon * sigma * Ar * (CtoK(Trec)**4-CtoK(Ta)**4)
-    hconv = CtoK(Trec)/60 + 5/3 # [W/m2K] convection coefficient Eq. 20 in McGovern12
-    '''D.L. Siebers, J.S. Kraabel, Estimating convective energy losses from solar central 
-    receivers, Sandia National Lab. (SNL-CA), Livermore, CA (United States), 1984. 
-    https://doi.org/10.2172/6906848.'''
-    Qconv = hconv * Ar * (CtoK(Trec) - CtoK(Ta))
+#     Qrad = epsilon * sigma * Ar * (CtoK(Trec)**4-CtoK(Ta)**4)
+#     hconv = CtoK(Trec)/60 + 5/3 # [W/m2K] convection coefficient Eq. 20 in McGovern12
+#     '''D.L. Siebers, J.S. Kraabel, Estimating convective energy losses from solar central 
+#     receivers, Sandia National Lab. (SNL-CA), Livermore, CA (United States), 1984. 
+#     https://doi.org/10.2172/6906848.'''
+#     Qconv = hconv * Ar * (CtoK(Trec) - CtoK(Ta))
     
-    Qnet = alpha * Qin - Qrad - Qconv # Eq. 8 in McGovern12
+#     Qnet = alpha * Qin - Qrad - Qconv # Eq. 8 in McGovern12
     
-    nR = 0.412 # SAM default
+#     nR = 0.412 # SAM default
 
-    if Qnet.all() <= 0: #<<<<<<<<<<<<<<<<<<< check with Qin
-        P = 0
-    else:
-        P = Qnet * nR * nG
-    return P/1e6 # convert W to MW
+#     if Qnet.all() <= 0: #<<<<<<<<<<<<<<<<<<< check with Qin
+#         P = 0
+#     else:
+#         P = Qnet * nR * nG
+#     return P/1e6 # convert W to MW
 
 #%% Alternative Incidence angle methods for towers
 

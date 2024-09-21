@@ -20,7 +20,7 @@ def custom_date_parser(date_str):
 def sotr():
     """SolarTrough ExampleData
     """    
-    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
+    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
     return SolarTroughCalcs(
         foc_len = 0.88 # [m] focal length CSPP T.1 in Mosleh19
         ,N = 1800 # [m * troughs] 25 * 48 CSPP pp.4 in Mosleh19 for 250 kWe turbine

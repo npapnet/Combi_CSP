@@ -42,8 +42,8 @@ def theta_transversal(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT)->np.
     Returns:
         float: theta  transversal incidence angle
     """    
-
-    return np.arctan(np.sin(np.radians(ssloc.azim(hoy))) * np.tan(np.radians(ssloc.z(hoy))))
+    # TODO check np.radians(ssloc.azim_rad(hoy)) it does not make sense
+    return np.arctan(np.sin(np.radians(ssloc.azim_rad(hoy))) * np.tan(np.radians(ssloc.z_rad(hoy))))
 
 
 def theta_i(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT)->float: 
@@ -61,8 +61,9 @@ def theta_i(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT)->float:
 
     Returns:
         float: not tested
-    """    
-    return np.arctan(np.cos(np.radians(ssloc.azim(hoy))) * np.tan(np.radians(ssloc.z(hoy)))* np.cos(theta_transversal(ssloc=ssloc)))
+    """
+    # TODO check np.radians(ssloc.azim_rad(hoy)) it does not make sense
+    return np.arctan(np.cos(np.radians(ssloc.azim_rad(hoy))) * np.tan(np.radians(ssloc.z_rad(hoy)))* np.cos(theta_transversal(ssloc=ssloc)))
 
 
 # not tested
@@ -81,18 +82,18 @@ def thetai_transversal(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
 
     Returns:
         _type_: _description_
-    """    
-    return np.arctan(abs(np.sin(ssloc.azim(hoy)))/np.tan(ssloc.ele(hoy)))
+    """
+    return np.arctan(abs(np.sin(ssloc.azim_rad(hoy)))/np.tan(ssloc.ele_rad(hoy)))
 
 def thetai_longtitudinal(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT): 
-    return np.arcsin(np.cos(ssloc.azim(hoy))*np.cos(ssloc.ele(hoy)))
+    return np.arcsin(np.cos(ssloc.azim_rad(hoy))*np.cos(ssloc.ele_rad(hoy)))
 
 
 def thetai(ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT, inclination=90, azimuths=0): # incidence angle [in radians]
     #TODO This function originially resides is solar_system_location.py
-    g = np.degrees(ssloc.azim(hoy)) - azimuths # if surface looks due S then azimuths=0
-    return np.arccos(np.cos(ssloc.ele(hoy)) * np.sin(np.radians(inclination)) * np.cos(np.radians(g)) 
-        + np.sin(ssloc.ele(hoy)) * np.cos(np.radians(inclination)))
+    g = np.degrees(ssloc.azim_rad(hoy)) - azimuths # if surface looks due S then azimuths=0
+    return np.arccos(np.cos(ssloc.ele_rad(hoy)) * np.sin(np.radians(inclination)) * np.cos(np.radians(g)) 
+        + np.sin(ssloc.ele_rad(hoy)) * np.cos(np.radians(inclination)))
 
 def shade_function(Ws,Wc, ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
     """Shade function for Parabolic Trough Solar Power Plants, 
@@ -111,7 +112,7 @@ def shade_function(Ws,Wc, ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
     Returns:
         _type_: _description_
     """    
-    return abs(Ws * np.cos(ssloc.z(hoy)) / (Wc * np.cos(thetai(ssloc, hoy))))
+    return abs(Ws * np.cos(ssloc.z_rad(hoy)) / (Wc * np.cos(thetai(ssloc, hoy))))
 
 def end_loss(f,L,N, ssloc:SolarSystemLocation, hoy:np.array=HOYS_DEFAULT):
     '''Lippke, 1995 in pp.31 in A.M. Patnode, Simulation and Performance Evaluation of Parabolic Trough Solar Power Plants, 

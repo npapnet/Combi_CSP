@@ -28,7 +28,7 @@ df_pvgis = pd.read_csv(FNAME, header=16, nrows=8776-16, parse_dates=['time(UTC)'
 Ib = df_pvgis.loc[:,'Gb(n)']
 
 #%% Set Site location
-sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
+sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
 
 #%% Tower related dimensions
 # Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
@@ -36,8 +36,8 @@ sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
 # Ht = 0.1 #np.arange(0.1,0.4,0.1) # Tower height [km]
 # A_helio = 225000 # SolarII 82,750 m² for 10MW https://en.wikipedia.org/wiki/The_Solar_Project
 
-stc =  SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, 
-        Ar = 99.3 , A_helio = 225000,
+stc =  SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, 
+        Ar_m2 = 99.3 , A_helio_m2 = 225000,
         slobj=sslCrete)
 oTow = stc.perform_calc(Ib)
 #%%

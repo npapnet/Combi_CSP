@@ -13,8 +13,8 @@ def custom_date_parser(date_str):
 def st():
     """SolarTower ExampleData
     """    
-    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt=+2, alt=0)
-    return SolarTowerCalcs(alt = 200*10e-3 , Ht = 0.1, Ar = 99.3 , A_helio = 225000, slobj=slobj)
+    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+    return SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, Ar_m2 = 99.3 , A_helio_m2 = 225000, slobj=slobj)
 
 
 
