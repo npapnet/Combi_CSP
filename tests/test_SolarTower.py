@@ -21,14 +21,14 @@ def custom_date_parser(date_str):
 def st():
     """SolarTower ExampleData
     """    
-    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+    slobj = SolarSystemLocation(lat=35, lon=24,  dt_gmt_hr=+2, alt=0)
     return SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, Ar_m2 = 99.3 , A_helio_m2 = 225000, slobj=slobj)
 
 @pytest.fixture
 def st2():
     """SolarTower ExampleData
     """    
-    slobj = SolarSystemLocation(lat=12, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+    slobj = SolarSystemLocation(lat=12, lon=24,  dt_gmt_hr=+2, alt=0)
     return SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, Ar_m2 = 99.3 , A_helio_m2 = 225000, slobj=slobj)
 
 
@@ -49,7 +49,7 @@ def Ib():
 
 def test_perform_calcs_site1(st, Ib):
     oTow = st.perform_calc(Ib)
-    vals = oTow.data.values
+    vals = oTow.data_df['Power_MW'].values
     assert vals.sum() == pytest.approx(110832.60989446181,1e-3) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(125038.6806487658 ,1e-3), 'Absolute sum failed'
     assert vals.std() == pytest.approx(18.822240024085243,1e-6) , 'Std is incorrect'
@@ -70,7 +70,7 @@ def test_perform_calcs_st2(st2, Ib):
         Ib (_type_): _description_
     """    
     oTow = st2.perform_calc(Ib)
-    vals = oTow.data.values
+    vals = oTow.data_df['Power_MW'].values
     assert not( vals.sum() == pytest.approx(110832.60989446181,1e-3)        ), 'Sum of values deos not match'
     assert not( np.abs(vals).sum() == pytest.approx(125038.6806487658 ,1e-3)) , 'Absolute sum failed'
     assert not( vals.std() == pytest.approx(18.822240024085243,1e-6)        ), 'Std is incorrect' 

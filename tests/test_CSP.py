@@ -14,7 +14,7 @@ from CombiCSP import SolarSystemLocation
 def Crete():
     """Example site
     """    
-    return SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+    return SolarSystemLocation(lat=35, lon=24,  dt_gmt_hr=+2, alt=0)
 
 
 @pytest.fixture

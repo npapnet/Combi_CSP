@@ -196,7 +196,7 @@ strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS,
         slobj=sslCrete)
 oTr = strc_opt.perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
 
-combiNS_np = (oTow.data + oTr.data).values
+combiNS_np = (oTow.data_df + oTr.data_df).values
 combiNS_xyz_np = np.vstack(combiNS_np).reshape((365,24))
 
 tmp_res_Dic =ee.economics_for_Combination(
@@ -214,7 +214,7 @@ tmp_res_Dic =ee.economics_for_Combination(
 # N_opt_EW = 800
 
 oTrEW = strc_opt.perform_calcs_EW(Ib=Ib,hoy= hoy, Tr=Tr)
-combiEW_np = (oTow.data + oTrEW.data).values
+combiEW_np = (oTow.data_df + oTrEW.data_df).values
 combiEW_xyz_np = np.vstack(combiEW_np).reshape((365,24))
 
 tmp_res_Dic =ee.economics_for_Combination(

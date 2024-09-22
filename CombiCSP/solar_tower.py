@@ -15,7 +15,7 @@ from CombiCSP.solar_system_location import SolarSystemLocation
 STEFAN_BOLTZMANN_CONSTANT = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
 
 class SolarTowerCalcs():
-    _hourly_results : OutputContainer = None
+    results_container : OutputContainer = None
     optical_efficiency:float= 100 # heliostat optical effiency [%] 65% pp.24 in Pacheco
     
     nR:float = 0.412 # SAM default
@@ -72,13 +72,13 @@ class SolarTowerCalcs():
         # data = solarII(Ib=Ib,Trans=transmittance, IAM=IAM_tow(hoy)
         
         hourly_energy_yield = self.solarII(Ib=Ib,Trans=transmittance, nG=0.97, hoy=hoy)
-        self._hourly_results = OutputContainer(
-                data = hourly_energy_yield,
-                A_helio=self.A_helio_m2, 
-                Ctow=self.Ctow,
-                Ib_N=Ib
+        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':hourly_energy_yield})
+        self.results_container = OutputContainer(
+                power_df = df,
+                scenario_params = self.params_as_dict(),
+                system_type='tower'
             )
-        return self._hourly_results
+        return self.results_container
     
     def solarII(self, Ib:pd.Series,Trans:float, nG:float = 0.97, hoy:np.array=HOYS_DEFAULT
             , Trec_Celcius:float = 565 # the working fluid temperature in the receiver [oC] 565 oC 838K

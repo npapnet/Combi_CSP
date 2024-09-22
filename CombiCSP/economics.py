@@ -222,8 +222,8 @@ class Economic_environment():
         Returns:
             _type_: _description_
         """    
-
-        capital_csp_tow = oTow.A_helio* csp_area_costs + oTow.PowerMax_MW*power_block_cost
+        A_helio = oTow.scenario_params['A_helio_m2']
+        capital_csp_tow =A_helio* csp_area_costs + oTow.PowerMax_MW*power_block_cost
         revenue_csp_tow = cashflow(oTow.Energy_MWh, csp_energy_price, self._Eoil, 0.4, -self.oil_price, capital_csp_tow)
                           
         cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in lifetime]
@@ -231,13 +231,16 @@ class Economic_environment():
         npv_csp_tow = npf.npv (csp_discount_rate, [-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
         irr_csp_tow = npf.irr([-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
         return {
-            'A_helio': oTow.A_helio,
             'cash_flow':cash_flow_tow,
-            'scenaria': (oTow.A_helio, oTow.Ctow, 
-                            oTow.PowerMax_MW, oTow.Energy_MWh,
-                            oTow.CF, dpb_tow, 
-                            npv_csp_tow, irr_csp_tow, 
-                            cash_flow_tow)
+            'scenario_params': oTow.scenario_params,
+            'scenario_financial': {
+                'PowerMax_MW': oTow.PowerMax_MW,
+                'Energy_MWh': oTow.Energy_MWh,
+                'CF': oTow.CF,
+                'discounted_payback_period': dpb_tow, 
+                'npv': npv_csp_tow,
+                'irr': irr_csp_tow,
+                'cash_flow': cash_flow_tow}
         }
         
     def economics_for_SolarTrough(self, 
@@ -260,8 +263,9 @@ class Economic_environment():
 
         Returns:
             _type_: _description_
-        """    
-        capital_csp_tro = oTr.A_helio* csp_area_costs + oTr.PowerMax_MW*power_block_cost
+        """
+        area = oTr.scenario_params.get('area_m2')
+        capital_csp_tro = area * csp_area_costs + oTr.PowerMax_MW*power_block_cost
         revenue_csp_tro = cashflow(oTr.Energy_MWh,csp_energy_price,self._Eoil,0.4,-self.oil_price,capital_csp_tro)
 
         cash_flow_tro = [-capital_csp_tro] + [revenue_csp_tro for i in lifetime]
@@ -270,14 +274,19 @@ class Economic_environment():
             [-capital_csp_tro] + [revenue_csp_tro for i in lifetime])
         irr_csp_tro = npf.irr([-capital_csp_tro] \
             + [revenue_csp_tro for i in lifetime])
+        
         return {
-            'A_helio': oTr.A_helio,
-            'cash_flow':cash_flow_tro,
-            'scenaria': (oTr.A_helio, oTr.Ctow, 
-                        oTr.PowerMax_MW, oTr.Energy_MWh,
-                        oTr.CF, dpb_tro, 
-                        npv_csp_tro, irr_csp_tro, 
-                        cash_flow_tro)}
+            'cash_flow': cash_flow_tro,
+            'scenario_params': oTr.scenario_params,
+            'scenario_financial': {
+                'PowerMax_MW': oTr.PowerMax_MW,
+                'Energy_MWh': oTr.Energy_MWh,
+                'CF': oTr.CF,
+                'discounted_payback_period': dpb_tro, 
+                'npv': npv_csp_tro,
+                'irr': irr_csp_tro,
+                'cash_flow': cash_flow_tro}
+        }
 
     def economics_for_Combination(self, 
         oTow:OutputContainer,
@@ -303,7 +312,7 @@ class Economic_environment():
             _type_: _description_
         """    
         Area_total = oTr.A_helio+oTow.A_helio
-        PcombiNS = (oTr.data + oTow.data).max()
+        PcombiNS = (oTr.data_df + oTow.data_df).max()
         EcombiNS = oTr.Energy_MWh + oTow.Energy_MWh
         
         capital_combiNS = (Area_total)*csp_area_costs + PcombiNS*power_block_cost

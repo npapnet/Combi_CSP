@@ -13,7 +13,7 @@ def custom_date_parser(date_str):
 def st():
     """SolarTower ExampleData
     """    
-    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+    slobj = SolarSystemLocation(lat=35, lon=24,  dt_gmt_hr=+2, alt=0)
     return SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1, Ar_m2 = 99.3 , A_helio_m2 = 225000, slobj=slobj)
 
 
@@ -55,7 +55,7 @@ def test_ee_tower(st, ee, Ib):
             power_block_cost=910000.0,
             # capital_csp=5000000,
         lifetime=range(30))
-    assert tmp_res_Dic['A_helio'] == 225000
+    assert tmp_res_Dic.get('scenario_params')['A_helio_m2'] == 225000
     np.testing.assert_almost_equal(
             tmp_res_Dic['cash_flow'][:2],
             [-106352083.86326265, 23230996.15] )
@@ -63,9 +63,12 @@ def test_ee_tower(st, ee, Ib):
     expecting = np.array([2.2500000e+05, 2.2658610e+03, 5.8766026e+01, 1.1083405e+05,
          2.1529938e-01, 6.1683743e+00, 1.3231513e+08, 2.1784382e-01])
          # TODO go to solar tower and get the actual numbers 
-    np.testing.assert_almost_equal(
-        np.array( (tmp_res_Dic['scenaria'][:8])-expecting)/expecting, np.zeros(8), decimal=5)
+    
+    fin_res = tmp_res_Dic['scenario_financial']
 
-        # old values (when capital_Csp was active)
-        # [2.2500000e+05, 2.2658610e+03, 5.8766026e+01, 1.1083405e+05,
-        # 2.1529938e-01, 6.1683743e+00, 1.3231513e+08, 4.6461992e+00]
+    assert fin_res.get('PowerMax_MW') == pytest.approx(expecting[2], abs=1e-3), 'PowerMax_MW'
+    assert fin_res.get('Energy_MWh') == pytest.approx(expecting[3], abs=1e-3), 'Energy_MWh'
+    assert fin_res.get('CF') == pytest.approx(expecting[4], abs=1e-3), 'CF'
+    assert fin_res.get('discounted_payback_period') == pytest.approx(expecting[5], abs=1e-3), 'discounted_payback_period'
+    assert fin_res.get('npv') == pytest.approx(expecting[6], rel=1e-5), 'NPV'
+    assert fin_res.get('irr') == pytest.approx(expecting[7], abs=1e-3), 'IRR'

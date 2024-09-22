@@ -20,7 +20,7 @@ def custom_date_parser(date_str):
 def sotr():
     """SolarTrough ExampleData
     """    
-    slobj = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+    slobj = SolarSystemLocation(lat=35, lon=24,  dt_gmt_hr=+2, alt=0)
     return SolarTroughCalcs(
         foc_len = 0.88 # [m] focal length CSPP T.1 in Mosleh19
         ,N = 1800 # [m * troughs] 25 * 48 CSPP pp.4 in Mosleh19 for 250 kWe turbine
@@ -47,7 +47,7 @@ def Ib():
 
 def test_perform_calc_gen_EW(sotr, Ib):
     OTrou = sotr.perform_calc(alignment='EW', Ib=Ib)
-    vals = OTrou.data.values
+    vals = OTrou.power_data_as_array()
     assert vals.sum() == pytest.approx(52583.642890174386) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(130955.74198433738 ,1e-3), 'Absolute sum failed'
     assert vals.std() == pytest.approx(20.21308794388492,1e-6) , 'Std is incorrect'
@@ -60,7 +60,7 @@ def test_perform_calc_gen_EW(sotr, Ib):
 
 def test_perform_calc_gen_NS(sotr, Ib):
     OTrou = sotr.perform_calc(alignment='NS', Ib=Ib)
-    vals = OTrou.data.values
+    vals = OTrou.power_data_as_array()
     assert vals.sum() == pytest.approx(74596.35065305409) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(151041.27571630833 ,1e-3), 'Absolute sum failed'
     assert vals.std() == pytest.approx(21.388075760449134,1e-6) , 'Std is incorrect'
@@ -73,7 +73,7 @@ def test_perform_calc_gen_NS(sotr, Ib):
 
 def test_perform_calcs_EW(sotr, Ib):
     OTrou = sotr.perform_calcs_EW(Ib)
-    vals = OTrou.data.values
+    vals = OTrou.power_data_as_array()
     assert vals.sum() == pytest.approx(52583.642890174386) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(130955.74198433738 ,1e-3), 'Absolute sum failed'
     assert vals.std() == pytest.approx(20.21308794388492,1e-6) , 'Std is incorrect'
@@ -86,7 +86,7 @@ def test_perform_calcs_EW(sotr, Ib):
 
 def test_perform_calcs_NS(sotr, Ib):
     OTrou = sotr.perform_calcs_NS(Ib)
-    vals = OTrou.data.values
+    vals = OTrou.power_data_as_array()
     assert vals.sum() == pytest.approx(74596.35065305409) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(151041.27571630833 ,1e-3), 'Absolute sum failed'
     assert vals.std() == pytest.approx(21.388075760449134,1e-6) , 'Std is incorrect'

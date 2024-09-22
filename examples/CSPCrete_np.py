@@ -36,7 +36,7 @@ stc =  SolarTowerCalcs(alt_ = 200*10e-3 , Ht_km = 0.1,
         slobj=sslCrete)
 oTow = stc.perform_calc(Ib)
 #%%
-plt.plot(hoy, oTow.data, label='1')
+plt.plot(hoy, oTow.data_df, label='1')
 plt.xlabel('Time (hour of year)')
 plt.ylabel('Power (MW)')
 plt.title('Tower')
@@ -65,8 +65,8 @@ sotr = SolarTroughCalcs(
 oew = sotr.perform_calcs_EW(Ib=Ib, Tr=Tr)
 ons = sotr.perform_calcs_NS(Ib=Ib, Tr=Tr)
 #%%
-plt.plot(hoy, ons.data)#,xlim(100,600)
-plt.plot(hoy, oew.data)#,xlim(100,600)
+plt.plot(hoy, ons.data_df)#,xlim(100,600)
+plt.plot(hoy, oew.data_df)#,xlim(100,600)
 plt.xlabel('Time (hour of year)')
 plt.ylabel('Power (MW)')
 plt.legend(('EW','NS'))

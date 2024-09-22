@@ -162,8 +162,10 @@ class SolarTroughCalcs():
         #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
         costhetai_EW_arr =  np.cos( d(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(d(hoy)**2))**0.5
         
-        data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
-        self._hourly_results = OutputContainer(data = data, A_helio=self.area, Ctow=self.Cg)
+        power_data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
+        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
+        scenario_params = self.params_as_dict()
+        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type='trough_EW')
         return self._hourly_results
 
     def costhetai_EW(self, hoy):
@@ -188,11 +190,28 @@ class SolarTroughCalcs():
         costhetai_NS_arr = np.cos(d(hoy)) * (np.sin(np.radians(self._sl.W(hoy)))**2 + 
                 (np.cos(lat_rad) *  np.cos(np.radians(self._sl.W(hoy))) + np.tan(d(hoy)) * np.sin(lat_rad))**2)**0.5
  
-        data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=costhetai_NS_arr,
+        power_data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=costhetai_NS_arr,
                       Tr=Tr)
-        self._hourly_results  = OutputContainer(data = data, A_helio=self.area, Ctow=self.Cg)
+        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
+        scenario_params = self.params_as_dict()
+        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type='trough_NS')
         return self._hourly_results
-    
+
+    def params_as_dict(self):
+        dic = {
+            'foc_len_m':self.foc_len,
+            'no_units':self.N,
+            'unit_length_m':self.L,
+            'Ws':self.Ws,
+            'receiver_dia_m':self.receiver_dia_m,
+            'collector_width_m':self.collector_width_m,
+            'area_m2':self.area,
+            'Ac_m2':self.Ac(),
+            'Ar_m2':self.Ar(),
+            'Cg':self.Cg
+        }
+        return dic
+
     def costhetai_NS(self, hoy)->np.array:
         lat_rad = self._sl.lat_rad
         return np.cos(d(hoy)) * (np.sin(np.radians(self._sl.W(hoy)))**2 + 

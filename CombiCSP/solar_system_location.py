@@ -15,7 +15,7 @@ HOYS_DEFAULT = np.arange(1, 8761, 1) # hours of year
 class SolarSystemLocation:
     def __init__(self, lat:float,  lon:float, 
                  dt_gmt_hr:float, 
-                 mer:float=0, # removed because it was not used. Probaly this refers to Local Standard Time Meridian (LSTM)
+                #  mer:float=0, # removed because it was not used. Probaly this refers to Local Standard Time Meridian (LSTM)
                  alt:float=0):
         """class that contains the location of the system 
 
