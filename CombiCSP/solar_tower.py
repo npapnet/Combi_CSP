@@ -15,6 +15,7 @@ from CombiCSP.solar_system_location import SolarSystemLocation
 STEFAN_BOLTZMANN_CONSTANT = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
 
 class SolarTowerCalcs():
+    _system_type = 'tower'
     results_container : OutputContainer = None
     optical_efficiency:float= 100 # heliostat optical effiency [%] 65% pp.24 in Pacheco
     
@@ -68,15 +69,18 @@ class SolarTowerCalcs():
 
         Returns:
             _type_: _description_
-        """        
+        """
         # data = solarII(Ib=Ib,Trans=transmittance, IAM=IAM_tow(hoy)
         
         hourly_energy_yield = self.solarII(Ib=Ib,Trans=transmittance, nG=0.97, hoy=hoy)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':hourly_energy_yield})
+        tower_params = {'system_type':self._system_type} 
+        tower_params.update(self.params_as_dict())
+        
         self.results_container = OutputContainer(
                 power_df = df,
-                scenario_params = self.params_as_dict(),
-                system_type='tower'
+                scenario_params = tower_params,
+                system_type= self._system_type
             )
         return self.results_container
     

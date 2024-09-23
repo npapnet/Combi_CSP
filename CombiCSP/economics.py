@@ -109,7 +109,7 @@ def irr(values): # http://nullege.com/codes/search/numpy.irr
     return rate
 
 def cashflow(Ecsp,csp_price,fuel_energy,eff,fuel_price,capital): 
-    return round(Ecsp*csp_price+fuel_energy/eff*fuel_price-0.04*capital,2)
+    return np.round(Ecsp*csp_price+fuel_energy/eff*fuel_price-0.04*capital,2)
 
 def expenses(Eaux, eff,fuel_price,capital):
     """_summary_
@@ -202,7 +202,9 @@ class Economic_environment():
         """
         return energy_MWh*3.412
 
-    
+    # region [Economic Analysis functions specific to Technology]
+    # TODO:  this would make more sense inside each of the technology classes.
+    # PRIORITY: 3
     def economics_for_Solar_tower(self, 
             oTow:OutputContainer,
             csp_area_costs,
@@ -232,6 +234,7 @@ class Economic_environment():
         irr_csp_tow = npf.irr([-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
         return {
             'cash_flow':cash_flow_tow,
+            'system_type': oTow.system_type,	
             'scenario_params': oTow.scenario_params,
             'scenario_financial': {
                 'PowerMax_MW': oTow.PowerMax_MW,
@@ -277,6 +280,7 @@ class Economic_environment():
         
         return {
             'cash_flow': cash_flow_tro,
+            'system_type': oTr.system_type,
             'scenario_params': oTr.scenario_params,
             'scenario_financial': {
                 'PowerMax_MW': oTr.PowerMax_MW,
@@ -299,6 +303,10 @@ class Economic_environment():
         """This function performs an economic analysis on the performance 
         output of a csp combination TOWER + TROUGH
 
+        # TODO this function is limited to the combination of Tower + trough
+        # it cannot be used for other technologies. 
+
+
         Args:
             oTow (OutputContainer): references the tower object
             oTr (OutputContainer): references the trough object
@@ -311,12 +319,17 @@ class Economic_environment():
         Returns:
             _type_: _description_
         """    
-        Area_total = oTr.A_helio+oTow.A_helio
-        PcombiNS = (oTr.data_df + oTow.data_df).max()
+        Area_total = oTow.scenario_params['A_helio_m2']+oTr.scenario_params['area_m2']
+        combiNS_df = pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', suffixes=('_tow', '_tr'))
+        combiNS_df['Power_MW'] = combiNS_df['Power_MW_tow'] + combiNS_df['Power_MW_tr']
+        PcombiNS = combiNS_df['Power_MW'].values
+        PowerMax_MW = PcombiNS.max()
+
         EcombiNS = oTr.Energy_MWh + oTow.Energy_MWh
         
-        capital_combiNS = (Area_total)*csp_area_costs + PcombiNS*power_block_cost
-        revenue_combiNS = cashflow(EcombiNS,csp_energy_price,self._Eoil,eff=0.4,fuel_price=-self._oil_price,capital=capital_combiNS)
+        capital_combiNS = (Area_total)*csp_area_costs + PowerMax_MW*power_block_cost
+        revenue_combiNS = cashflow(EcombiNS,csp_energy_price, self._Eoil,eff=0.4,
+                fuel_price=-self._oil_price, capital=capital_combiNS)
         cash_flow_combiNS = [-capital_combiNS] + [revenue_combiNS for i in lifetime]
         dpb_combiNS = discounted_payback_period(csp_discount_rate, cash_flow_combiNS)
         npv_combiNS = npf.npv(csp_discount_rate, \
@@ -325,12 +338,16 @@ class Economic_environment():
             [-capital_combiNS] + [revenue_combiNS for i in lifetime])
 
         return {
-            'A_helio': Area_total,
             'cash_flow':cash_flow_combiNS,
-            'scenaria': (Area_total, None, 
-                        PcombiNS, EcombiNS,
-                        None, 
-                        dpb_combiNS, 
-                        npv_combiNS, irr_combiNS, 
-                        cash_flow_combiNS)}
+            'scenario_params': {'tower':oTow.scenario_params,
+                                'trough':oTr.scenario_params},
+            'scenario_financial': {
+                'PowerMax_MW': PowerMax_MW,
+                'Energy_MWh': EcombiNS,
+                'discounted_payback_period': dpb_combiNS, 
+                'npv': npv_combiNS  ,
+                'irr': irr_combiNS,
+                'cash_flow': cash_flow_combiNS}
+        }
+
 # %%

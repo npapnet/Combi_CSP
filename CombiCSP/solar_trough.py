@@ -14,6 +14,9 @@ from CombiCSP.solar_system_location import SolarSystemLocation, d
 
 STEFAN_BOLTZZMAN_CONSTANT = 5.67 * 1e-8 # [W/m2K4] Stefan – Boltzman constant
 class SolarTroughCalcs():
+    _system_type:str = 'trough'
+    _system_alignment:str = None # NS or EW (currently not implemented)
+
     _hourly_results : OutputContainer = None
     N:int = None # number of units
     L:float= None # solar trough unit length
@@ -155,6 +158,7 @@ class SolarTroughCalcs():
         Returns:
             OutputContainer: Object that contains the power [MW] for each hour for the trough.
         """ 
+        system_type=self._system_type+'_EW'
         IAM = self.IAM_tro(hoy)
         
         #Parabolic trough cosine function in East West orientation
@@ -164,8 +168,9 @@ class SolarTroughCalcs():
         
         power_data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
-        scenario_params = self.params_as_dict()
-        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type='trough_EW')
+        scenario_params = {'system_type': system_type}
+        scenario_params.update( self.params_as_dict())
+        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
         return self._hourly_results
 
     def costhetai_EW(self, hoy):
@@ -182,7 +187,7 @@ class SolarTroughCalcs():
         Returns:
             OutputContainer: Object that contains the power [MW] for each hour for the trough.
         """        
-
+        system_type=self._system_type+'_NS'
         lat_rad = self._sl.lat_rad
         #Parabolic trough cosine function in North-South orientation
         #   Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
@@ -193,8 +198,10 @@ class SolarTroughCalcs():
         power_data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=costhetai_NS_arr,
                       Tr=Tr)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
-        scenario_params = self.params_as_dict()
-        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type='trough_NS')
+        scenario_params = {'system_type': system_type}
+        scenario_params.update( self.params_as_dict())
+
+        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
         return self._hourly_results
 
     def params_as_dict(self):

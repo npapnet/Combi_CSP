@@ -40,7 +40,7 @@ Set the Site location
 at Crete::Ierapetra(lat=35, lon=24
 """
 #%% 
-sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+sslCrete = SolarSystemLocation(lat=35, lon=24,  dt_gmt_hr=+2, alt=0)
 
 #%% [markdown]
 # ## read the radiation datadata from local file
@@ -135,9 +135,9 @@ for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10
             csp_discount_rate= csp_discount_rate,
             power_block_cost=power_block_cost,
         lifetime=range(30))
-    area_list3.append(tmp_res_Dic['A_helio'] )
+    area_list3.append(tmp_res_Dic['scenario_params']['A_helio_m2'] )
     cash_flow_list3.append(tmp_res_Dic['cash_flow'])
-    tow_scenaria3.append(tmp_res_Dic['scenaria'])
+    tow_scenaria3.append(tmp_res_Dic['scenario_financial'])
 
 
 
@@ -154,9 +154,9 @@ for N_i in np.arange(800,1301,100): # 100MW np.arange(1000,2001,100):
             csp_discount_rate= csp_discount_rate,
             power_block_cost=power_block_cost,
         lifetime=range(30))
-    ns_area_list.append(tmp_res_Dic['A_helio'] )
+    ns_area_list.append(tmp_res_Dic['scenario_params']['area_m2'] )
     ns_cash_flow_list.append(tmp_res_Dic['cash_flow'])
-    ns_trough_scenaria.append(tmp_res_Dic['scenaria'])
+    ns_trough_scenaria.append(tmp_res_Dic['scenario_financial'])
 
 #%%
 
@@ -195,10 +195,16 @@ strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS,
         L=L, Wr=Wr, Wc=Wc, Ws = Ws,
         slobj=sslCrete)
 oTr = strc_opt.perform_calcs_NS(Ib=Ib,hoy= HOYS_DEFAULT, Tr=Tr)
+#%%
+# pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', )
+# merge oTow.data_df and oTr.data_df on 'HOY' column, and use as suffixes tow and tr
+combiNS = pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', suffixes=('_tow', '_tr'))
+combiNS['Power_MW'] = combiNS['Power_MW_tow'] + combiNS['Power_MW_tr']
+combiNS.head()
+#%%
 
-combiNS_np = (oTow.data_df + oTr.data_df).values
-combiNS_xyz_np = np.vstack(combiNS_np).reshape((365,24))
-
+combiNS_power_2d_np = np.vstack(combiNS['Power_MW'].values).reshape((365,24))
+#%%
 tmp_res_Dic =ee.economics_for_Combination(
         oTr= oTr,
         oTow = oTow,
@@ -208,24 +214,60 @@ tmp_res_Dic =ee.economics_for_Combination(
         power_block_cost=power_block_cost,
         # capital_csp= capital_csp,
         lifetime=range(30))
-
+#%% [markdown]
+""" 
+## East West trough orienation 
+"""
+#%%
 # # T+EW optimum
 # A_helio_optEW = 125000
 # N_opt_EW = 800
 
 oTrEW = strc_opt.perform_calcs_EW(Ib=Ib,hoy= HOYS_DEFAULT, Tr=Tr)
-combiEW_np = (oTow.data_df + oTrEW.data_df).values
-combiEW_xyz_np = np.vstack(combiEW_np).reshape((365,24))
+combiEW = pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', suffixes=('_tow', '_tr'))
+combiEW['Power_MW'] = combiEW['Power_MW_tow'] + combiEW['Power_MW_tr']
+combiEW_xyz_np = np.vstack(combiEW['Power_MW'].values).reshape((365,24))
 
 tmp_res_Dic =ee.economics_for_Combination(
-        oTr= oTrEW,
-        oTow = oTow,
-        csp_area_costs= csp_area_costs,
-        csp_energy_price=csp_energy_price,
-        csp_discount_rate= csp_discount_rate,
-        power_block_cost=power_block_cost,
-        # capital_csp= capital_csp,
-        lifetime=range(30))
-# # %%
-
+    oTr= oTrEW,
+    oTow = oTow,
+    csp_area_costs= csp_area_costs,
+    csp_energy_price=csp_energy_price,
+    csp_discount_rate= csp_discount_rate,
+    power_block_cost=power_block_cost,
+    # capital_csp= capital_csp,
+    lifetime=range(30)
+    )
+# %%
+tmp_res_Dic.keys()
+# %%
+print('=========== Financial scenario outputs =============')
+for k,v in tmp_res_Dic['scenario_financial'].items():
+    if isinstance(v, str):
+        print(f"{k} : {v}")
+    else:
+        try:
+            iter(v)
+        except TypeError:
+            print(f"{k} : {v}")
+#%%
+print('=========== Tower scenario params =============')
+for k,v in tmp_res_Dic['scenario_params']['tower'].items():
+    if isinstance(v, str):
+            print(f"{k} : {v}")
+    else:
+        try:
+            iter(v)
+        except TypeError:
+            print(f"{k} : {v}")
+    
+print('=========== Trough scenario params =============')
+for k,v in tmp_res_Dic['scenario_params']['trough'].items():
+    if isinstance(v, str):
+            print(f"{k} : {v}")
+    else:
+        try:
+            iter(v)
+        except TypeError:
+            print(f"{k} : {v}")
 # %%

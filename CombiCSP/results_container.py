@@ -73,7 +73,7 @@ class OutputContainer():
 
     @property
     def Energy_MWh(self)->float:
-        """retunrs the total energy yield of the solar tower. 
+        """retunrns the total energy yield of the solar tower. 
 
         Returns:
            float : the total power per year in [MWh]

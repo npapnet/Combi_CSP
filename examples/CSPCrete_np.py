@@ -23,7 +23,7 @@ df_pvgis = pd.read_csv(FNAME, header=16, nrows=8776-16, parse_dates=['time(UTC)'
 Ib = df_pvgis.loc[:,'Gb(n)']
 
 #%% Set Site location
-sslCrete = SolarSystemLocation(lat=35, lon=24, mer=-25, dt_gmt_hr=+2, alt=0)
+sslCrete = SolarSystemLocation(lat=35, lon=24, dt_gmt_hr=+2, alt=0)
 
 #%% Tower related dimensions
 # Ar = 99.3 # receiver area [m2] pp.44 in Pacheco
