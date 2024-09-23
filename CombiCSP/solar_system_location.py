@@ -124,8 +124,8 @@ class SolarSystemLocation:
         return 15 * (solar_time - 12) # 360deg/24h = 15deg/h
 
     def ele_rad(self, hoy:np.array=HOYS_DEFAULT): # solar elevation angle or solar height [in radians]
-        return np.arcsin(np.cos(np.radians(self.lat_deg)) * np.cos(d(hoy)) * np.cos(np.radians(self.W(hoy))) \
-            + np.sin(np.radians(self.lat_deg)) * np.sin(d(hoy)))
+        return np.arcsin(np.cos(np.radians(self.lat_deg)) * np.cos(delta_rad(hoy)) * np.cos(np.radians(self.W(hoy))) \
+            + np.sin(np.radians(self.lat_deg)) * np.sin(delta_rad(hoy)))
 
     def z_rad(self, hoy:np.array=HOYS_DEFAULT):
         """Returns the solar zenith angle in radians
@@ -137,8 +137,8 @@ class SolarSystemLocation:
         Returns:
         np.array: solar zenith angle in radians"""
 
-        return np.arccos(np.cos(np.radians(self.lat_deg)) * np.cos(d(hoy)) * np.cos(np.radians(self.W(hoy))) 
-        + np.sin(np.radians(self.lat_deg)) * np.sin(d(hoy)))
+        return np.arccos(np.cos(np.radians(self.lat_deg)) * np.cos(delta_rad(hoy)) * np.cos(np.radians(self.W(hoy))) 
+        + np.sin(np.radians(self.lat_deg)) * np.sin(delta_rad(hoy)))
 
     def azim_rad(self, hoy:np.array=HOYS_DEFAULT)->np.array: 
         """Returns the solar azimuth angle in radians
@@ -149,7 +149,7 @@ class SolarSystemLocation:
         Returns:
             np.array: solar azimuth angle in radians
         """   
-        return np.arcsin(np.cos(d(hoy)) * np.sin(np.radians(self.W(hoy))) / np.cos(self.ele_rad(hoy)))
+        return np.arcsin(np.cos(delta_rad(hoy)) * np.sin(np.radians(self.W(hoy))) / np.cos(self.ele_rad(hoy)))
 
     def Ib_from_csv(self,FNAME:pathlib.Path)->pd.Series:
         """loads data from a local csv folder
@@ -283,7 +283,7 @@ def eda(hoy:np.array=HOYS_DEFAULT, method:str= 'wiki' ):
         _type_: _description_
     """    
     
-    dic = {'wiki':d,
+    dic = {'wiki':delta_rad,
            'Katsaprakakis': d2,
            '-81': d3,
            'pveducation' :d1
@@ -316,10 +316,13 @@ def d2(hoy:np.array=HOYS_DEFAULT):
 def d3(hoy:np.array=HOYS_DEFAULT):
     return 23.45 * np.sin(np.radians(360*(hoy-81*24)/365*24))
 
-def d(hoy:np.array=HOYS_DEFAULT): # [in radians] https://en.wikipedia.org/wiki/Sunrise_equation
+def delta_rad(hoy:np.array=HOYS_DEFAULT): 
     '''Calculate ecliptic coordinates (ecliptic longitude and obliquity of the
     ecliptic in radians but without limiting the angle to be less than 2*Pi
-    (i.e., the result may be greater than 2*Pi)'''
+    (i.e., the result may be greater than 2*Pi)
+    
+    [in radians] https://en.wikipedia.org/wiki/Sunrise_equation
+    '''
     dOmega = 2.1429 - 0.0010394594 * hoy
     dMeanLongitude = 4.8950630 + 0.017202791698 * hoy
     dMeanAnomaly = 6.2400600 + 0.0172019699 * hoy

@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.optimize import minimize
 
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT
-from CombiCSP.solar_system_location import SolarSystemLocation, d
+from CombiCSP.solar_system_location import SolarSystemLocation, delta_rad
 
 STEFAN_BOLTZZMAN_CONSTANT = 5.67 * 1e-8 # [W/m2K4] Stefan – Boltzman constant
 class SolarTroughCalcs():
@@ -123,7 +123,7 @@ class SolarTroughCalcs():
     
     @property
     def Cg(self)->float:
-        """Geometrical Concentration 
+        """Geometrical Concentration (collector area/receiver area)
 
         Affected by the following properties:
             Wc (float): width of collector in  [m]
@@ -146,7 +146,6 @@ class SolarTroughCalcs():
         else:
             raise Exception('Alignement should be one of ["EW", "NS"]')
 
-
     def perform_calcs_EW(self, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
         """Calculation for a solar trough oriented EW for a year per hour 
 
@@ -159,14 +158,8 @@ class SolarTroughCalcs():
             OutputContainer: Object that contains the power [MW] for each hour for the trough.
         """ 
         system_type=self._system_type+'_EW'
-        IAM = self.IAM_tro(hoy)
         
-        #Parabolic trough cosine function in East West orientation
-        #    Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
-        #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
-        costhetai_EW_arr =  np.cos( d(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(d(hoy)**2))**0.5
-        
-        power_data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
+        power_data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= self.costhetai_EW(hoy), Tr=Tr)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
         scenario_params = {'system_type': system_type}
         scenario_params.update( self.params_as_dict())
@@ -174,7 +167,13 @@ class SolarTroughCalcs():
         return self._hourly_results
 
     def costhetai_EW(self, hoy):
-        return  np.cos( d(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(d(hoy)**2))**0.5
+        """ Parabolic trough cosine function in East West orientation
+        #    Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
+        #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
+        """
+        deltas = delta_rad(hoy)
+        Ws =  np.radians(self._sl.W(hoy))
+        return  np.cos( deltas) * (np.cos(Ws)**2 + np.tan(deltas**2))**0.5
 
     def perform_calcs_NS(self, Ib, Tr=318., hoy=HOYS_DEFAULT)->OutputContainer:
         """Calculation for a solar trough oriented NS for a year per hour 
@@ -192,10 +191,8 @@ class SolarTroughCalcs():
         #Parabolic trough cosine function in North-South orientation
         #   Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
         #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
-        costhetai_NS_arr = np.cos(d(hoy)) * (np.sin(np.radians(self._sl.W(hoy)))**2 + 
-                (np.cos(lat_rad) *  np.cos(np.radians(self._sl.W(hoy))) + np.tan(d(hoy)) * np.sin(lat_rad))**2)**0.5
- 
-        power_data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=costhetai_NS_arr,
+
+        power_data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=self.costhetai_NS(hoy),
                       Tr=Tr)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
         scenario_params = {'system_type': system_type}
@@ -203,6 +200,13 @@ class SolarTroughCalcs():
 
         self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
         return self._hourly_results
+
+    def costhetai_NS(self, hoy)->np.array:
+        lat_rad = self._sl.lat_rad
+        deltas = delta_rad(hoy)
+        ws_rad = np.radians(self._sl.W(hoy))
+        return np.cos(deltas) * (np.sin(ws_rad)**2 + 
+                (np.cos(lat_rad) *  np.cos(ws_rad) + np.tan(deltas) * np.sin(lat_rad))**2)**0.5
 
     def params_as_dict(self):
         dic = {
@@ -219,11 +223,7 @@ class SolarTroughCalcs():
         }
         return dic
 
-    def costhetai_NS(self, hoy)->np.array:
-        lat_rad = self._sl.lat_rad
-        return np.cos(d(hoy)) * (np.sin(np.radians(self._sl.W(hoy)))**2 + 
-                (np.cos(lat_rad) *  np.cos(np.radians(self._sl.W(hoy))) + np.tan(d(hoy)) * np.sin(lat_rad))**2)**0.5
- 
+
 
     def thetai(self, hoy:np.array=HOYS_DEFAULT, inclination=90., azimuths=0.)->np.array: #
         """ Calculates the incidence angle [in radians]
@@ -405,7 +405,94 @@ class SolarTroughCalcs():
         return res.x[0]
 
 
-#%% Incidence angle methods for troughs
+#region NS Trough  
+class SolarTroughNS():
+    _system_type:str = 'trough_NS'
+
+    def __init__(self, Trough:SolarTroughCalcs):
+        self.Trough = Trough
+        self._sl = self.Trough._sl
+    
+    def perform_calcs(self, Ib, Tr=318., hoy=HOYS_DEFAULT)->OutputContainer:
+        """Calculation for a solar trough oriented NS for a year per hour 
+
+        Args:
+            Ib (pd.Series): beam irradiance
+            Tr (float, optional): [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04. Defaults to 318.
+            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
+
+        Returns:
+            OutputContainer: Object that contains the power [MW] for each hour for the trough.
+        """        
+        system_type = self._system_type
+        lat_rad = self._sl.lat_rad
+        #Parabolic trough cosine function in North-South orientation
+        #   Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
+        #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
+ 
+        power_data = self.Trough.di_sst(hoy=hoy, Ib=Ib,costhetai=self.costhetai_NS(hoy),
+                      Tr=Tr)
+        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
+        scenario_params = {'system_type': system_type}
+        scenario_params.update( self.Trough.params_as_dict())
+
+        output  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
+        return output
+
+    def costhetai_NS(self, hoy)->np.array:
+        lat_rad = self._sl.lat_rad
+        deltas = delta_rad(hoy)
+        ws_rad = np.radians(self._sl.W(hoy))
+        return np.cos(deltas) * (np.sin(ws_rad)**2 + 
+                (np.cos(lat_rad) *  np.cos(ws_rad) + np.tan(deltas) * np.sin(lat_rad))**2)**0.5
+#endregion
+
+#region EW Trough  
+class SolarTroughEW():
+    _system_type:str = 'trough_EW'
+
+    def __init__(self, Trough:SolarTroughCalcs):
+        self.Trough = Trough
+        self._sl = self.Trough._sl
+    
+
+    def perform_calcs(self, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
+        """Calculation for a solar trough oriented EW for a year per hour 
+
+        Args:
+            Ib (pd.Series): beam irradiance
+            Tr (float, optional): [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04. Defaults to 318.
+            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
+
+        Returns:
+            OutputContainer: Object that contains the power [MW] for each hour for the trough.
+        """ 
+        system_type= self._system_type 
+        # IAM = self.Trough.IAM_tro(hoy)
+        
+        #Parabolic trough cosine function in East West orientation
+        #    Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
+        #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
+        
+        costhetai_EW_arr =  np.cos( delta_rad(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(delta_rad(hoy)**2))**0.5
+        
+        power_data = self.Trough.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
+        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
+        scenario_params = {'system_type': system_type}
+        scenario_params.update( self.Trough.params_as_dict())
+        output  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
+        return output
+
+    def costhetai_EW(self, hoy):
+        return  np.cos( delta_rad(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(delta_rad(hoy)**2))**0.5
+
+#endregion
+
+
+
+#%% 
+#region obsolete code
+# Incidence angle methods for troughs
 # def IAM_tro2(hoy:np.array=HOYS_DEFAULT):
 #     '''N. Fraidenraich, C. Oliveira, A.F. Vieira da Cunha, J.M. Gordon, O.C. Vilela, 
 #     Analytical modeling of direct steam generation solar power plants, Solar Energy. 98 (2013) 511–522. 
@@ -525,3 +612,4 @@ class SolarTroughCalcs():
 #     DT = Tro - Tfi
 #     return Tfo#Qu/1000 # convert W to kW
 
+#endregion

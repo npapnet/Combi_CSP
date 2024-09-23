@@ -46,7 +46,7 @@ class Test_da:
         assert cspSSL.eda(hoy_ex1, method='-81')[0] == pytest.approx( 23.413310626097925, abs=1e-3)
         
     def test_d(self,hoy_ex1):
-        assert cspSSL.d(hoy_ex1)[0] == pytest.approx( -0.4005513174270792, abs=1e-3)
+        assert cspSSL.delta_rad(hoy_ex1)[0] == pytest.approx( -0.4005513174270792, abs=1e-3)
         assert cspSSL.eda(hoy_ex1, method='wiki')[0] == pytest.approx( -0.4005513174270792, abs=1e-3)
         assert cspSSL.eda(hoy_ex1)[0] == pytest.approx( -0.4005513174270792, abs=1e-3)
     
