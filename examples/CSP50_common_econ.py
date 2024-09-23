@@ -94,3 +94,12 @@ csp_area_costs_df = pd.DataFrame(
 csp_area_costs = csp_area_costs_df.iloc[0,:].sum()
 
 lifetime = np.arange(0, 31, 1)
+
+#%%
+print(f"============ Investment parameters ===============")
+print(f"       Loaded from:  'CP50_Common_econ.py' ")
+print(f"csp_area_costs: {csp_area_costs}")
+print(f"power_block_cost: {power_block_cost}")
+print(f"csp_energy_price: {csp_energy_price}")
+print(f"csp_discount_rate: {csp_discount_rate}")
+

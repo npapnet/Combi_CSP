@@ -176,6 +176,7 @@ class Economic_environment():
         """        
         return self._oil_price
 
+    #region Conversion fucntions
     def MWh_to_BOE(self, energy_MWh):
         """converts MWh to Barrel Oil Equivalent
 
@@ -201,7 +202,8 @@ class Economic_environment():
             float: 
         """
         return energy_MWh*3.412
-
+    #endregion
+    
     # region [Economic Analysis functions specific to Technology]
     # TODO:  this would make more sense inside each of the technology classes.
     # PRIORITY: 3
@@ -230,8 +232,8 @@ class Economic_environment():
                           
         cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in lifetime]
         dpb_tow = discounted_payback_period(csp_discount_rate, cash_flow_tow)
-        npv_csp_tow = npf.npv (csp_discount_rate, [-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
-        irr_csp_tow = npf.irr([-capital_csp_tow] + [revenue_csp_tow for i in lifetime])
+        npv_csp_tow = npf.npv (csp_discount_rate, cash_flow_tow)
+        irr_csp_tow = npf.irr(cash_flow_tow)
         return {
             'cash_flow':cash_flow_tow,
             'system_type': oTow.system_type,	

@@ -7,9 +7,12 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+import numpy_financial as npf
 
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT, SolarSystemLocation
 from CombiCSP.solar_system_location import SolarSystemLocation
+
+from .economics import cashflow, discounted_payback_period, Economic_environment
 
   
 STEFAN_BOLTZMANN_CONSTANT = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
@@ -211,6 +214,67 @@ class SolarTowerCalcs():
                     options={'xatol': 1e-4, 'disp': False})
         return res.x[0]
 
+
+    def financial_assessment(self, 
+            oTow:OutputContainer,
+            ee:Economic_environment,
+            csp_area_costs:float,
+            power_block_cost:float,
+            csp_energy_price:float,
+            csp_discount_rate:float,
+            lifetime:int|list=range(31)):
+        """This function performs an economic analysis on the performance output of a csp
+
+        Args:
+            oTow (OutputContainer): _description_
+            csp_area_costs (float): land costs in Euro/m2
+            power_block_cost (float): power block cost in Euro/MW
+            csp_energy_price (float): energy selling price in Euro/MWh
+            csp_discount_rate (float): economic discount rate
+            
+            lifetime (int|list, optional): lifetime of the system. Defaults to range(30).
+            
+        Returns:
+            _type_: _description_
+        """
+        if isinstance(lifetime, int):
+            lifetime = list(range(lifetime+1))
+
+        A_helio = self.A_helio_m2
+        
+        capital_csp_tow =A_helio* csp_area_costs + oTow.PowerMax_MW*power_block_cost
+        revenue_csp_tow = cashflow(oTow.Energy_MWh, csp_energy_price, 
+                                   fuel_energy=ee._Eoil, eff=0.4, fuel_price=-ee.oil_price, 
+                                   capital=capital_csp_tow)
+                          
+        cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in lifetime[:-1]]
+        
+        # investment metrics
+        dpb_tow = discounted_payback_period(csp_discount_rate, cash_flow_tow)
+        npv_csp_tow = npf.npv (csp_discount_rate, cash_flow_tow)
+        irr_csp_tow = npf.irr(cash_flow_tow )
+        
+        df = pd.DataFrame({'year': lifetime, 
+                           'cash_flow': cash_flow_tow,
+                           'discounted_cash_flow': [cf/(1+csp_discount_rate)**i for i,cf in enumerate(cash_flow_tow)]
+                           }
+                          )
+        df['cumulative_cash_flow'] = df['discounted_cash_flow'].cumsum()
+        
+        return {
+            'system_type': self._system_type,	
+            'cash_flow_df': df,
+            'scenario_params': oTow.scenario_params,
+            'scenario_financial': {
+                'PowerMax_MW': oTow.PowerMax_MW,
+                'Energy_MWh': oTow.Energy_MWh,
+                'CF': oTow.CF,
+                'discounted_payback_period': dpb_tow, 
+                'npv': npv_csp_tow,
+                'irr': irr_csp_tow
+                }
+            }
+        
 
 # %% Old obsolete code
 # def solarII(Ib:pd.Series,Trans:float,IAM:np.array,A_helio:float,Ar:float, 

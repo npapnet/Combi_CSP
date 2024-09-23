@@ -72,3 +72,34 @@ def test_ee_tower(st, ee, Ib):
     assert fin_res.get('discounted_payback_period') == pytest.approx(expecting[5], abs=1e-3), 'discounted_payback_period'
     assert fin_res.get('npv') == pytest.approx(expecting[6], rel=1e-5), 'NPV'
     assert fin_res.get('irr') == pytest.approx(expecting[7], abs=1e-3), 'IRR'
+
+
+def test_ee_tower_internal(st, ee, Ib):
+    o_tmp = st.perform_calc(Ib)
+    tmp_res_Dic =st.financial_assessment(
+            oTow= o_tmp,
+            ee=ee,
+            csp_area_costs= 235,
+            power_block_cost=910000.0,
+            csp_energy_price=248,
+            csp_discount_rate= 0.09,            
+            # capital_csp=5000000,
+            lifetime=30)
+    assert tmp_res_Dic.get('scenario_params')['A_helio_m2'] == 225000
+    cash_flow = tmp_res_Dic['cash_flow_df']['cash_flow'].values
+    np.testing.assert_almost_equal(
+            cash_flow[:2],
+            [-106352083.86326265, 23230996.15] )
+
+    expecting = np.array([2.2500000e+05, 2.2658610e+03, 5.8766026e+01, 1.1083405e+05,
+         2.1529938e-01, 6.1683743e+00, 1.3231513e+08, 2.1784382e-01])
+         # TODO go to solar tower and get the actual numbers 
+    
+    fin_res = tmp_res_Dic['scenario_financial']
+
+    assert fin_res.get('PowerMax_MW') == pytest.approx(expecting[2], abs=1e-3), 'PowerMax_MW'
+    assert fin_res.get('Energy_MWh') == pytest.approx(expecting[3], abs=1e-3), 'Energy_MWh'
+    assert fin_res.get('CF') == pytest.approx(expecting[4], abs=1e-3), 'CF'
+    assert fin_res.get('discounted_payback_period') == pytest.approx(expecting[5], abs=1e-3), 'discounted_payback_period'
+    assert fin_res.get('npv') == pytest.approx(expecting[6], rel=1e-5), 'NPV'
+    assert fin_res.get('irr') == pytest.approx(expecting[7], abs=1e-3), 'IRR'
