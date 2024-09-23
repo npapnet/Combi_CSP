@@ -32,6 +32,8 @@ class SolarTroughCalcs():
     alpha:float = 1 # absorptivity of the receiver
     nR:float = 0.375 # isentropic efficiency Salazar17
 
+    pwr_calculator = None # Class that calculates the power of the system based on alignment EW or NS
+
     def __init__(self,
         foc_len = 0.88 
         ,N = 1800 
@@ -137,76 +139,19 @@ class SolarTroughCalcs():
 
         return self.Ac() / self.Ar()
 
-    def perform_calc(self, alignment:str, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
+    def set_alignment(self, alignment:str):
         assert alignment in ['EW', 'NS'], 'Alignement should be one of ["EW", "NS"]'
+        self._system_alignment = alignment
         if alignment == 'NS':
-            return self.perform_calcs_NS(Ib=Ib, Tr=Tr, hoy=hoy)
+            self.pwr_calculator = SolarTroughNS(self)
         elif alignment == 'EW':
-            return self.perform_calcs_EW(Ib=Ib, Tr=Tr, hoy=hoy)
+            self.pwr_calculator = SolarTroughEW(self) 
         else:
             raise Exception('Alignement should be one of ["EW", "NS"]')
-
-    def perform_calcs_EW(self, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
-        """Calculation for a solar trough oriented EW for a year per hour 
-
-        Args:
-            Ib (pd.Series): beam irradiance
-            Tr (float, optional): [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04. Defaults to 318.
-            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
-
-        Returns:
-            OutputContainer: Object that contains the power [MW] for each hour for the trough.
-        """ 
-        system_type=self._system_type+'_EW'
         
-        power_data = self.di_sst(hoy = hoy, Ib=Ib,costhetai= self.costhetai_EW(hoy), Tr=Tr)
-        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
-        scenario_params = {'system_type': system_type}
-        scenario_params.update( self.params_as_dict())
-        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
-        return self._hourly_results
-
-    def costhetai_EW(self, hoy):
-        """ Parabolic trough cosine function in East West orientation
-        #    Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
-        #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
-        """
-        deltas = delta_rad(hoy)
-        Ws =  np.radians(self._sl.W(hoy))
-        return  np.cos( deltas) * (np.cos(Ws)**2 + np.tan(deltas**2))**0.5
-
-    def perform_calcs_NS(self, Ib, Tr=318., hoy=HOYS_DEFAULT)->OutputContainer:
-        """Calculation for a solar trough oriented NS for a year per hour 
-
-        Args:
-            Ib (pd.Series): beam irradiance
-            Tr (float, optional): [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04. Defaults to 318.
-            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
-
-        Returns:
-            OutputContainer: Object that contains the power [MW] for each hour for the trough.
-        """        
-        system_type=self._system_type+'_NS'
-        lat_rad = self._sl.lat_rad
-        #Parabolic trough cosine function in North-South orientation
-        #   Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
-        #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
-
-        power_data = self.di_sst(hoy=hoy, Ib=Ib,costhetai=self.costhetai_NS(hoy),
-                      Tr=Tr)
-        df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
-        scenario_params = {'system_type': system_type}
-        scenario_params.update( self.params_as_dict())
-
-        self._hourly_results  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
-        return self._hourly_results
-
-    def costhetai_NS(self, hoy)->np.array:
-        lat_rad = self._sl.lat_rad
-        deltas = delta_rad(hoy)
-        ws_rad = np.radians(self._sl.W(hoy))
-        return np.cos(deltas) * (np.sin(ws_rad)**2 + 
-                (np.cos(lat_rad) *  np.cos(ws_rad) + np.tan(deltas) * np.sin(lat_rad))**2)**0.5
+    def perform_calc(self, alignment:str, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
+        self.set_alignment(alignment)
+        return self.pwr_calculator.perform_calcs(Ib=Ib, Tr=Tr, hoy=hoy)
 
     def params_as_dict(self):
         dic = {
@@ -262,7 +207,29 @@ class SolarTroughCalcs():
             _type_: _description_
         """
         #TODO needs rad despite thetai(hoy) already in rad???
-        return np.cos(np.radians(self.thetai(hoy))) + 0.02012 * self.thetai(hoy) - 0.01030 * self.thetai(hoy)**2 
+        thetas = self.thetai(hoy)
+        return np.cos(np.radians(thetas)) + 0.02012 * thetas - 0.01030 * thetas**2
+
+    
+    def incident_energy_on_system(self,  Ib:pd.Series, hoy:np.array = HOYS_DEFAULT, alignment:str=None)->pd.Series:
+        """Function that returns the incident energy on the system depending on the alignment
+
+        Args:
+            Ib (pd.Series): _description_
+            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
+            alignment (str): can be 'NS' or 'EW'. Defaults to None (no changes in aligment).	
+
+        Raises:
+            Exception: _description_
+
+        Returns:
+            pd.Series: incident angle at different hour of the year. 
+        """
+        if alignment is not None:
+            self.set_alignment(alignment)
+        
+        cos_thetas = self.pwr_calculator.costhetai(hoy)
+        return Ib*self.IAM_tro(hoy) *cos_thetas
 
     def di_sst(self, hoy, Ib, costhetai, Tr, nG:float = 0.97
                , Ta = 15 # [oC] ambient temperature close to the receiver 15 oC 288K
@@ -288,16 +255,11 @@ class SolarTroughCalcs():
         Returns:
             _type_: power in [MW].
         """    
-        Wc = self.collector_width_m # width of collectors in [m]
-        Wr = self.receiver_dia_m # width of receiver in [m]
-        Ws = self.Ws # width of spacing between collectors in [m]
-        L = self.L   # length of units [m]
-        N = self.N   # number of units
         
-        IAM = self.IAM_tro(hoy) # incidence angle modifier 
-        
+        incident_energy = self.incident_energy_on_system(Ib=Ib, hoy=hoy) #( this is based on alignment)
         # Thermal Energy input (in the duration of an hour)
-        Qin = Ib * costhetai* IAM * self.Ac() * self.optical_efficiency/100 # Eq. 4  in McGovern12
+        # Qin = Ib * costhetai* IAM * self.Ac() * self.optical_efficiency/100 # Eq. 4  in McGovern12
+        Qin = incident_energy * self.Ac() * self.optical_efficiency/100 # Eq. 4  in McGovern12
         
         # Radiation losses
         Qrad = self.epsilon * STEFAN_BOLTZZMAN_CONSTANT * self.Ar() * (CtoK(Tr)**4-CtoK(Ta)**4) # check model from Broesamle
@@ -314,35 +276,13 @@ class SolarTroughCalcs():
         # =============================
 
         # power output 
-        
         if Qnet.all() <= 0:
             P = 0
         else:
             P = Qnet * self.nR * nG
         return P/1e6 # convert W to MW
-    
-    def incident_energy_on_system(self, alignment:str,  Ib:pd.Series, hoy:np.array = HOYS_DEFAULT)->pd.Series:
-        """Function that returns the incident energy on the system depending on the alignment
 
-        Args:
-            alignment (str): _description_
-            Ib (pd.Series): _description_
-            hoy (np.array, optional): _description_. Defaults to HOYS_DEFAULT.
-
-        Raises:
-            Exception: _description_
-
-        Returns:
-            pd.Series: _description_
-        """        
-        assert alignment in ['EW', 'NS'], 'Alignement should be one of ["EW", "NS"]'
-        if alignment == 'NS':
-            return Ib*self.costhetai_NS(hoy)*self.IAM_tro(hoy)
-        elif alignment == 'EW':
-            return Ib*self.costhetai_EW(hoy)*self.IAM_tro(hoy)
-        else:
-            raise Exception('Alignement should be one of ["EW", "NS"]')
-    
+        
     def mutate(self,foc_len = None 
         ,N = None 
         ,L = None 
@@ -430,7 +370,7 @@ class SolarTroughNS():
         #   Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
         #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
  
-        power_data = self.Trough.di_sst(hoy=hoy, Ib=Ib,costhetai=self.costhetai_NS(hoy),
+        power_data = self.Trough.di_sst(hoy=hoy, Ib=Ib,costhetai=self.costhetai(hoy),
                       Tr=Tr)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
         scenario_params = {'system_type': system_type}
@@ -439,7 +379,7 @@ class SolarTroughNS():
         output  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
         return output
 
-    def costhetai_NS(self, hoy)->np.array:
+    def costhetai(self, hoy)->np.array:
         lat_rad = self._sl.lat_rad
         deltas = delta_rad(hoy)
         ws_rad = np.radians(self._sl.W(hoy))
@@ -474,17 +414,21 @@ class SolarTroughEW():
         #    Gaul, H.; Rabl, A. Incidence-Angle Modifier and Average Optical Efficiency of Parabolic Trough Collectors. 
         #   Journal of Solar Energy Engineering 1980, 102, 16–21, doi:10.1115/1.3266115.
         
-        costhetai_EW_arr =  np.cos( delta_rad(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(delta_rad(hoy)**2))**0.5
-        
-        power_data = self.Trough.di_sst(hoy = hoy, Ib=Ib,costhetai= costhetai_EW_arr, Tr=Tr)
+        # costhetai_EW_arr = self.costhetai(hoy)
+        power_data = self.Trough.di_sst(hoy = hoy, Ib=Ib,
+                                        costhetai= self.costhetai(hoy), 
+                                        Tr=Tr)
         df = pd.DataFrame({'HOY':hoy,'Ib_n':Ib, 'Power_MW':power_data})
         scenario_params = {'system_type': system_type}
         scenario_params.update( self.Trough.params_as_dict())
         output  = OutputContainer(power_df = df, scenario_params=scenario_params, system_type=system_type)
         return output
 
-    def costhetai_EW(self, hoy):
-        return  np.cos( delta_rad(hoy)) * (np.cos(np.radians(self._sl.W(hoy)))**2 + np.tan(delta_rad(hoy)**2))**0.5
+    def costhetai(self, hoy):
+        deltas = delta_rad(hoy)
+        ws_rad = np.radians(self._sl.W(hoy))
+        return  np.cos( deltas) * (np.cos(ws_rad)**2 + np.tan(deltas**2))**0.5
+    
 
 #endregion
 

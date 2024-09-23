@@ -49,7 +49,7 @@ def Ib():
   
 
 def test_ee_trough(stro, ee, Ib):
-    o_tmp = stro.perform_calcs_NS(Ib, Tr=318, hoy=HOYS_DEFAULT)
+    o_tmp = stro.perform_calc(alignment='NS', Ib= Ib, Tr=318, hoy=HOYS_DEFAULT)
     tmp_res_Dic = ee.economics_for_SolarTrough(oTr=o_tmp, 
         csp_area_costs =235, 
         csp_energy_price =248, 

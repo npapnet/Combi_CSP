@@ -72,7 +72,7 @@ def test_perform_calc_gen_NS(sotr, Ib):
 
 
 def test_perform_calcs_EW(sotr, Ib):
-    OTrou = sotr.perform_calcs_EW(Ib)
+    OTrou = sotr.perform_calc(Ib=Ib, alignment='EW')
     vals = OTrou.power_data_as_array()
     assert vals.sum() == pytest.approx(52583.642890174386) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(130955.74198433738 ,1e-3), 'Absolute sum failed'
@@ -85,7 +85,7 @@ def test_perform_calcs_EW(sotr, Ib):
 
 
 def test_perform_calcs_NS(sotr, Ib):
-    OTrou = sotr.perform_calcs_NS(Ib)
+    OTrou = sotr.perform_calc(Ib=Ib, alignment='NS')
     vals = OTrou.power_data_as_array()
     assert vals.sum() == pytest.approx(74596.35065305409) , 'Sum of values deos not match'
     assert np.abs(vals).sum() == pytest.approx(151041.27571630833 ,1e-3), 'Absolute sum failed'
@@ -95,6 +95,25 @@ def test_perform_calcs_NS(sotr, Ib):
     assert OTrou.PowerMax_MW == pytest.approx(62.29854949627815,1e-6) , 'Max Power is incorrect'
     assert OTrou.CF == pytest.approx(0.13670332645996,1e-6) , 'CF is incorrect'
     assert OTrou.Energy_MWh == pytest.approx(74603.83,1e-1) , 'Energy_MWh is incorrect'
+
+
+
+def test_incident_energy_NS(sotr, Ib):
+    vals = sotr.incident_energy_on_system(Ib=Ib, alignment='NS')
+    expected = [1981411.5667823767, 1981411.5667823767, 302.48040170206184  ,302.48040170206184 ]
+    assert vals.sum() == pytest.approx(expected[0] ) , 'Sum of values deos not match'
+    assert np.abs(vals).sum() == pytest.approx(expected[1],1e-3), 'Absolute sum failed'
+    assert vals.std() == pytest.approx(expected[2],1e-6) , 'Std is incorrect'
+    assert np.abs(vals).std() == pytest.approx(expected[3],1e-6) , 'Std is incorrect'
+
+
+def test_incident_energy_EW(sotr, Ib):
+    vals = sotr.incident_energy_on_system(Ib=Ib, alignment='EW')
+    expected = [1670115.0899976315 , 1670115.0899976315 ,285.8631617628524  ,285.8631617628524 ]
+    assert vals.sum() == pytest.approx(expected[0] ) , 'Sum of values deos not match'
+    assert np.abs(vals).sum() == pytest.approx(expected[1],1e-3), 'Absolute sum failed'
+    assert vals.std() == pytest.approx(expected[2],1e-6) , 'Std is incorrect'
+    assert np.abs(vals).std() == pytest.approx(expected[3],1e-6) , 'Std is incorrect'
 
 
 
