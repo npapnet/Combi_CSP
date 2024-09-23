@@ -207,47 +207,7 @@ class Economic_environment():
     # region [Economic Analysis functions specific to Technology]
     # TODO:  this would make more sense inside each of the technology classes.
     # PRIORITY: 3
-    def economics_for_Solar_tower(self, 
-            oTow:OutputContainer,
-            csp_area_costs,
-            csp_energy_price,
-            csp_discount_rate,
-            power_block_cost,
-        lifetime=range(30)):
-        """This function performs an economic analysis on the performance output of a csp
-
-        Args:
-            oTow (OutputContainer): _description_
-            csp_area_costs (_type_): _description_
-            csp_energy_price (_type_): _description_
-            csp_discount_rate (_type_): _description_
-            power_block_cost (_type_): _description_
-            
-        Returns:
-            _type_: _description_
-        """    
-        A_helio = oTow.scenario_params['A_helio_m2']
-        capital_csp_tow =A_helio* csp_area_costs + oTow.PowerMax_MW*power_block_cost
-        revenue_csp_tow = cashflow(oTow.Energy_MWh, csp_energy_price, self._Eoil, 0.4, -self.oil_price, capital_csp_tow)
-                          
-        cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in lifetime]
-        dpb_tow = discounted_payback_period(csp_discount_rate, cash_flow_tow)
-        npv_csp_tow = npf.npv (csp_discount_rate, cash_flow_tow)
-        irr_csp_tow = npf.irr(cash_flow_tow)
-        return {
-            'cash_flow':cash_flow_tow,
-            'system_type': oTow.system_type,	
-            'scenario_params': oTow.scenario_params,
-            'scenario_financial': {
-                'PowerMax_MW': oTow.PowerMax_MW,
-                'Energy_MWh': oTow.Energy_MWh,
-                'CF': oTow.CF,
-                'discounted_payback_period': dpb_tow, 
-                'npv': npv_csp_tow,
-                'irr': irr_csp_tow,
-                'cash_flow': cash_flow_tow}
-        }
-        
+       
     def economics_for_SolarTrough(self, 
         oTr:OutputContainer,
         csp_area_costs,

@@ -115,13 +115,15 @@ cash_flow_list3 = []
 tow_scenaria3 = []
 for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10000):
     o_tmp = stc.mutate(A_helio=A_helio).perform_calc(Ib)
-    tmp_res_Dic =ee.economics_for_Solar_tower(
+    tmp_res_Dic =stc.financial_assessment(
             oTow= o_tmp,
+            ee=ee,
             csp_area_costs= csp_area_costs,
             csp_energy_price=csp_energy_price,
             csp_discount_rate= csp_discount_rate,
             power_block_cost=power_block_cost,
-        lifetime=range(30))
+            lifetime=range(30)
+            )
     area_list3.append(tmp_res_Dic['scenario_params']['A_helio_m2'] )
     cash_flow_list3.append(tmp_res_Dic['cash_flow'])
     tow_scenaria3.append(tmp_res_Dic['scenario_financial'])
@@ -171,7 +173,8 @@ tmp_res_Dic =ee.economics_for_SolarTrough(
         csp_energy_price=csp_energy_price,
         csp_discount_rate= csp_discount_rate,
         power_block_cost=power_block_cost,
-    lifetime=range(30))
+        lifetime=range(30)
+    )
 #%%
 
 # DPB = []
@@ -195,11 +198,6 @@ strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS,
         slobj=sslCrete)
 oTr = strc_opt.perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
 
-
-
-
-
-# %%
 #%%
 # pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', )
 # merge oTow.data_df and oTr.data_df on 'HOY' column, and use as suffixes tow and tr
