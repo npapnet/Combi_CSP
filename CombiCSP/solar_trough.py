@@ -8,9 +8,13 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+import numpy_financial as npf
 
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT
 from CombiCSP.solar_system_location import SolarSystemLocation, delta_rad
+
+from CombiCSP.economics import cashflow, discounted_payback_period, Economic_environment
+
 
 STEFAN_BOLTZZMAN_CONSTANT = 5.67 * 1e-8 # [W/m2K4] Stefan – Boltzman constant
 class SolarTroughCalcs():
@@ -247,7 +251,7 @@ class SolarTroughCalcs():
         Args:
             hoy (np.array): hour of year
             Ib (np.array): hour of year
-            costhetai (_type_): cosine function [rad]
+            costhetai (_type_): cosine function [rad] (not necessary)
             IAM (_type_): incidence angle modifier
             Tr (float): [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04 
             nG (float): Generator efficiency [dimensionless]
@@ -321,7 +325,8 @@ class SolarTroughCalcs():
             , slobj=  slobj
                                 )
 
-    def find_units_for_max_MW(self,  target_MW :float,
+    def find_units_for_max_MW(self, 
+        target_MW :float,
         alignment:str, 
         Ib:pd.Series, 
         Tr=318., hoy=HOYS_DEFAULT)->float:
@@ -343,6 +348,68 @@ class SolarTroughCalcs():
         res = minimize(func, x0, method='nelder-mead',
                     options={'xatol': 1e-4, 'disp': False})
         return res.x[0]
+
+
+    def financial_assessment(self, 
+        oTr:OutputContainer,
+        ee:Economic_environment,
+        csp_area_costs:float,
+        power_block_cost:float,
+        csp_energy_price:float,
+        csp_discount_rate:float,
+        lifetime=range(31)):
+        """This function performs an economic analysis on the performance 
+        output of a csp
+
+        Args:
+            oTr (OutputContainer): references the trough object
+            ee (Economic_environment): economic environment 
+            csp_area_costs (_type_): csp area costs
+            power_block_cost (_type_): cost of the power block
+            csp_energy_price (_type_): energy prices
+            csp_discount_rate (_type_): discount rate
+            lifetime (_type_, optional): _description_. Defaults to (0,1,2.. 30).
+
+        Returns:
+            _type_: _description_
+        """
+        if isinstance(lifetime, int):
+            lifetime = list(range(lifetime+1))
+
+        area = oTr.scenario_params.get('area_m2')
+
+        capital_csp_tro = area * csp_area_costs + oTr.PowerMax_MW*power_block_cost
+        revenue_csp_tro = cashflow(Ecsp=oTr.Energy_MWh,csp_price=csp_energy_price,
+                                   fuel_energy=ee._Eoil,eff=0.4,fuel_price=-ee.oil_price,
+                                   capital=capital_csp_tro)
+        
+        cash_flow_tro = [-capital_csp_tro] + [revenue_csp_tro for _ in lifetime[:-1]]
+
+        # investment metrics
+        dpb_tro = discounted_payback_period(csp_discount_rate, cash_flow_tro)
+        npv_csp_tro = npf.npv(csp_discount_rate, cash_flow_tro)
+        irr_csp_tro = npf.irr(cash_flow_tro)
+        
+        df = pd.DataFrame({'year': lifetime, 
+                           'cash_flow': cash_flow_tro,
+                           'discounted_cash_flow': [cf/(1+csp_discount_rate)**i for i,cf in enumerate(cash_flow_tro)]
+                           }
+                          )
+        df['cumulative_cash_flow'] = df['discounted_cash_flow'].cumsum()
+
+        return {
+            'system_type': oTr.system_type,
+            'cash_flow_df': df,
+            'scenario_params': oTr.scenario_params,
+            'scenario_financial': {
+                'PowerMax_MW': oTr.PowerMax_MW,
+                'Energy_MWh': oTr.Energy_MWh,
+                'CF': oTr.CF,
+                'discounted_payback_period': dpb_tro, 
+                'npv': npv_csp_tro,
+                'irr': irr_csp_tro}
+        }
+
 
 
 #region NS Trough  

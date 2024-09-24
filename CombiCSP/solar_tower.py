@@ -244,7 +244,7 @@ class SolarTowerCalcs():
         
         capital_csp_tow =A_helio* csp_area_costs + oTow.PowerMax_MW*power_block_cost
         revenue_csp_tow = cashflow(oTow.Energy_MWh, csp_energy_price, 
-                                   fuel_energy=ee._Eoil, eff=0.4, fuel_price=-ee.oil_price, 
+                                   fuel_energy=ee._Eoil, eff=0.4, fuel_price=-ee.oil_price,
                                    capital=capital_csp_tow)
                           
         cash_flow_tow = [-capital_csp_tow] + [revenue_csp_tow for i in lifetime[:-1]]

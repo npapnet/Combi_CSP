@@ -55,6 +55,12 @@ plt.legend()
 #%%
 
 oTow.data_df
+# %% [markdown]
+"""
+### Solar Tower Power output vs Hour of Day
+
+The following code block demonstrates the power output of the solar trough for the East-West alignment vs the hour of the day.
+"""
 # %%
 a = oTow.data_df
 # Conver Hour of Year to Hour of Day
@@ -62,10 +68,22 @@ a['hod']  = a.HOY % 24
 a.head(30)
 plt.plot(a.hod, a.Power_MW, '.')
 
+# %% [markdown]
+"""
+### Solar Tower Power distribution vs Hour of Day
+
+The following code block demonstrates the power output of a  solar tower vs the hour of the day.
+"""
 # %%
 # plot a bivariate kde for x hour of data, y power
 sns.kdeplot(x=a.hod, y=a.Power_MW, cmap='viridis', fill=True, cbar=True)
 
+# %% [markdown]
+"""
+### Solar Tower Power distribution vs Hour of Day
+
+The following code block demonstrates the power output of a  solar tower vs the hour of the day.
+"""
 # %%
 plt.plot(a.Ib_n, a.Power_MW, '.')
 plt.xlabel('Irradiance (W/m2)') 

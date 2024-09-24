@@ -17,24 +17,29 @@ def discounted_payback_period(rate, cash_flows): # #
     based on https://sushanthukeri.wordpress.com/2017/03/29/discounted-payback-periods/
 
     Args:
-        rate (_type_): interest rate 
+        rate (float): interest rate 
         cash_flows (_type_): cash flows
 
     Returns:
-        _type_: payback period in years
+        float : payback period in years (-1 means that the investment is not fully recovered within the examined period)
     """    
     cf_df = pd.DataFrame(cash_flows, columns=['UndiscountedCashFlows'])
     cf_df.index.name = 'Year'
     cf_df['DiscountedCashFlows'] = npf.pv(rate, pmt=0, nper=cf_df.index, fv=-cf_df['UndiscountedCashFlows'])
     cf_df['CumulativeDiscountedCashFlows'] = np.cumsum(cf_df['DiscountedCashFlows'])
     final_full_year = cf_df[cf_df.CumulativeDiscountedCashFlows < 0].index.values.max()
-    fractional_yr = -cf_df.CumulativeDiscountedCashFlows[final_full_year ]/cf_df.DiscountedCashFlows[final_full_year + 1]
-    payback_period = final_full_year + fractional_yr
-    #bar(lifetime, cf_df['CumulativeDiscountedCashFlows'], color='c')
-    #xlabel('Time (years)'), ylabel('€')
-    #grid(linestyle="--", linewidth=0.5, color='.25', zorder=-10)
-    #ylim([-1e8,1.25e8])
-    return payback_period
+    if final_full_year<len(cf_df)-1:
+        # investment fully recovered within the examined period
+        fractional_yr = -cf_df.CumulativeDiscountedCashFlows[final_full_year ]/cf_df.DiscountedCashFlows[final_full_year + 1]
+        payback_period = final_full_year + fractional_yr
+        #bar(lifetime, cf_df['CumulativeDiscountedCashFlows'], color='c')
+        #xlabel('Time (years)'), ylabel('€')
+        #grid(linestyle="--", linewidth=0.5, color='.25', zorder=-10)
+        #ylim([-1e8,1.25e8])
+        return payback_period
+    else:
+        # investment not fully recovered within the examined period
+        return -1
 
 def irr(values): # http://nullege.com/codes/search/numpy.irr
     """
@@ -108,17 +113,29 @@ def irr(values): # http://nullege.com/codes/search/numpy.irr
     rate = rate.item(np.argmin(np.abs(rate)))
     return rate
 
-def cashflow(Ecsp,csp_price,fuel_energy,eff,fuel_price,capital): 
+def cashflow(Ecsp,csp_price,fuel_energy,eff,fuel_price,capital)->float: 
+    """
+    Calculate the annual cash flow for a CSP plant 
+
+    Args:
+        Ecsp (_type_):  CSP plant Annual Energy yield 
+        csp_price (_type_): selling price of the CSP energy
+        fuel_energy (_type_): fuel energy 
+        eff (_type_): fuel efficiency
+        fuel_price (_type_): fuel price
+        capital (_type_): Capital investment (used for operating expenses)
+    """	
+    #FIXME what is the fuel_energy/eff*fuel_price term?
     return np.round(Ecsp*csp_price+fuel_energy/eff*fuel_price-0.04*capital,2)
 
 def expenses(Eaux, eff,fuel_price,capital):
-    """_summary_
+    """Calculate the annual expenses for a CSP plant
 
     Args:
         Eaux (_type_): auxilliary energy required to operate the facility 
         eff (_type_): fuel efficiency
         fuel_price (_type_): fuel price  [?]
-        capital (_type_): _description_
+        capital (_type_):  Capital investment (used for operating expenses)
 
     Returns:
         _type_: expenses
@@ -190,7 +207,7 @@ class Economic_environment():
         """
         return energy_MWh*0.588
 
-    def MWh_to_mBTU(self, energy_MWh):
+    def MWh_to_mBTU(self, energy_MWh:float)->float:
         """converts MWh to   Equivalent natural gas m^3
 
         [m BTU] 1MWh = 3.412mBTU https://www.convert-me.com/en/convert/energy/kwh/kwh-to-mymmbtu.html?u=kwh&v=1%2C000
@@ -210,10 +227,10 @@ class Economic_environment():
        
     def economics_for_SolarTrough(self, 
         oTr:OutputContainer,
-        csp_area_costs,
-        csp_energy_price,
-        csp_discount_rate,
-        power_block_cost,
+        csp_area_costs:float,
+        csp_energy_price:float,
+        csp_discount_rate:float,
+        power_block_cost:float,
         lifetime=range(30)):
         """This function performs an economic analysis on the performance 
         output of a csp
@@ -235,10 +252,8 @@ class Economic_environment():
 
         cash_flow_tro = [-capital_csp_tro] + [revenue_csp_tro for i in lifetime]
         dpb_tro = discounted_payback_period(csp_discount_rate, cash_flow_tro)
-        npv_csp_tro = npf.npv(csp_discount_rate, \
-            [-capital_csp_tro] + [revenue_csp_tro for i in lifetime])
-        irr_csp_tro = npf.irr([-capital_csp_tro] \
-            + [revenue_csp_tro for i in lifetime])
+        npv_csp_tro = npf.npv(csp_discount_rate, cash_flow_tro)
+        irr_csp_tro = npf.irr(cash_flow_tro)
         
         return {
             'cash_flow': cash_flow_tro,
