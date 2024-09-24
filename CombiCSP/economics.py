@@ -159,7 +159,7 @@ def mbtu_m3(mbtu:float):
 
 
 
-class Economic_environment():
+class EconomicEnvironment():
     """this is a class that is responsible for containing basic economic parameters for fiscal analysis
     
     @TODO this class requires extensive rework to make it more generic. (more specifically exposure to the npv, dpb etc functions should be provided)
@@ -224,50 +224,6 @@ class Economic_environment():
     # region [Economic Analysis functions specific to Technology]
     # TODO:  this would make more sense inside each of the technology classes.
     # PRIORITY: 3
-       
-    def economics_for_SolarTrough(self, 
-        oTr:OutputContainer,
-        csp_area_costs:float,
-        csp_energy_price:float,
-        csp_discount_rate:float,
-        power_block_cost:float,
-        lifetime=range(30)):
-        """This function performs an economic analysis on the performance 
-        output of a csp
-
-        Args:
-            oTr (OutputContainer): references the trough object
-            csp_area_costs (_type_): csp area costs
-            csp_energy_price (_type_): energy prices
-            csp_discount_rate (_type_): discount rate
-            power_block_cost (_type_): cost of the power block
-            lifetime (_type_, optional): _description_. Defaults to range(30).
-
-        Returns:
-            _type_: _description_
-        """
-        area = oTr.scenario_params.get('area_m2')
-        capital_csp_tro = area * csp_area_costs + oTr.PowerMax_MW*power_block_cost
-        revenue_csp_tro = cashflow(oTr.Energy_MWh,csp_energy_price,self._Eoil,0.4,-self.oil_price,capital_csp_tro)
-
-        cash_flow_tro = [-capital_csp_tro] + [revenue_csp_tro for i in lifetime]
-        dpb_tro = discounted_payback_period(csp_discount_rate, cash_flow_tro)
-        npv_csp_tro = npf.npv(csp_discount_rate, cash_flow_tro)
-        irr_csp_tro = npf.irr(cash_flow_tro)
-        
-        return {
-            'cash_flow': cash_flow_tro,
-            'system_type': oTr.system_type,
-            'scenario_params': oTr.scenario_params,
-            'scenario_financial': {
-                'PowerMax_MW': oTr.PowerMax_MW,
-                'Energy_MWh': oTr.Energy_MWh,
-                'CF': oTr.CF,
-                'discounted_payback_period': dpb_tro, 
-                'npv': npv_csp_tro,
-                'irr': irr_csp_tro,
-                'cash_flow': cash_flow_tro}
-        }
 
     def economics_for_Combination(self, 
         oTow:OutputContainer,

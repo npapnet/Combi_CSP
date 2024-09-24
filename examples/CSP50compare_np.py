@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 import numpy_financial as npf
 
-from CombiCSP import HOYS_DEFAULT, SolarSystemLocation, SolarTowerCalcs, OutputContainer, Economic_environment, SolarTroughCalcs
+from CombiCSP import HOYS_DEFAULT, SolarSystemLocation, SolarTowerCalcs, OutputContainer, EconomicEnvironment, SolarTroughCalcs
 import CombiCSP.misc as cspm
 import CombiCSP.economics as cspe
 
@@ -105,7 +105,7 @@ TODO: I need to change from tuple to dictionary for the output of the scenarios 
 """
 #%%
 
-ee = Economic_environment(
+ee = EconomicEnvironment(
     oil_price=oil_price, Eoil=Eoil,
     currency_units='USD'
 )

@@ -12,7 +12,7 @@ import numpy_financial as npf
 from CombiCSP import OutputContainer, CtoK, HOYS_DEFAULT, SolarSystemLocation
 from CombiCSP.solar_system_location import SolarSystemLocation
 
-from .economics import cashflow, discounted_payback_period, Economic_environment
+from .economics import cashflow, discounted_payback_period, EconomicEnvironment
 
   
 STEFAN_BOLTZMANN_CONSTANT = 5.67 * 1e-8 # Stefan – Boltzman constant [W/m2K4]
@@ -217,7 +217,7 @@ class SolarTowerCalcs():
 
     def financial_assessment(self, 
             oTow:OutputContainer,
-            ee:Economic_environment,
+            ee:EconomicEnvironment,
             csp_area_costs:float,
             power_block_cost:float,
             csp_energy_price:float,

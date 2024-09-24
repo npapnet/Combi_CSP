@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 import pytest
-from CombiCSP import Economic_environment, SolarSystemLocation, SolarTowerCalcs, SolarTroughCalcs
+from CombiCSP import EconomicEnvironment, SolarSystemLocation, SolarTowerCalcs, SolarTroughCalcs
 
 from datetime import datetime
 def custom_date_parser(date_str):
@@ -22,7 +22,7 @@ def st():
 def ee():
     """Economic environment 
     """    
-    return Economic_environment(   
+    return EconomicEnvironment(   
             oil_price=60, 
             Eoil=11.766,
             currency_units='USD')

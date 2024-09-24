@@ -114,7 +114,7 @@ The following are not included in the financial assessment
 - Operating and maintenance costs
 """
 # %%
-from CombiCSP import Economic_environment
+from CombiCSP import EconomicEnvironment
 
 oil_price = 60 # np.arange(12, 112, 10)# [$/barrel] https://www.statista.com/statistics/262860/uk-brent-crude-oil-price-changes-since-1976/
 Eaux = 20 # [MWh]
@@ -125,7 +125,7 @@ discount_rate = 0.09
 Eoil = Eaux*0.5883 # [BOE] 1MWh = 0.5883BOE https://www.convert-me.com/en/convert/energy/kwh/kwh-to-boe.html?u=kwh&v=1%2C000
 
 
-eenv = Economic_environment(
+eenv = EconomicEnvironment(
     oil_price=oil_price, 
     Eoil=Eoil,
     currency_units='USD'
