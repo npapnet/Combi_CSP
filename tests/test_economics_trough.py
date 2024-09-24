@@ -69,7 +69,6 @@ def test_trough_NS_fin(stro, ee, Ib):
             cash_flow[:2],
             [-117603680.04161312,   13795837.74])
 
-
     syst_res = tmp_res_Dic['scenario_params']
     fin_res = tmp_res_Dic['scenario_financial']
 

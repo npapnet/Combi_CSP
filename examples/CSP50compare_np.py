@@ -20,7 +20,7 @@ import numpy_financial as npf
 
 from CombiCSP import HOYS_DEFAULT, SolarSystemLocation, SolarTowerCalcs, OutputContainer, EconomicEnvironment, SolarTroughCalcs
 import CombiCSP.misc as cspm
-import CombiCSP.economics as cspe
+import CombiCSP.financial.economics as cspe
 
 from CombiCSP.storage import Tr
 
@@ -125,7 +125,7 @@ for A_helio in np.arange(75000,125001,10000): # 100MW np.arange(150000,250001,10
             lifetime=range(30)
             )
     area_list3.append(tmp_res_Dic['scenario_params']['A_helio_m2'] )
-    cash_flow_list3.append(tmp_res_Dic['cash_flow'])
+    cash_flow_list3.append(tmp_res_Dic['cash_flow_df']['cash_flow'].values)
     tow_scenaria3.append(tmp_res_Dic['scenario_financial'])
 
 
@@ -147,16 +147,17 @@ ns_area_list = []
 ns_cash_flow_list = []
 ns_trough_scenaria = []
 for N_i in np.arange(800,1301,100): # 100MW np.arange(1000,2001,100):
-    oTr = strc.mutate(N=N_i).perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
-    tmp_res_Dic =ee.economics_for_SolarTrough(
+    oTr = strc.mutate(N=N_i).perform_calc(Ib=Ib,hoy= hoy, Tr=Tr, alignment="NS")
+    tmp_res_Dic =strc.financial_assessment(
             oTr= oTr,
+            ee = ee,
             csp_area_costs= csp_area_costs,
             csp_energy_price=csp_energy_price,
             csp_discount_rate= csp_discount_rate,
             power_block_cost=power_block_cost,
         lifetime=range(30))
     ns_area_list.append(tmp_res_Dic['scenario_params']['area_m2'] )
-    ns_cash_flow_list.append(tmp_res_Dic['cash_flow'])
+    ns_cash_flow_list.append(tmp_res_Dic['cash_flow_df']['cash_flow'].values)
     ns_trough_scenaria.append(tmp_res_Dic['scenario_financial'])
 
 #%%
@@ -166,9 +167,10 @@ for N_i in np.arange(800,1301,100): # 100MW np.arange(1000,2001,100):
 strc =  SolarTroughCalcs(foc_len=foc_len, N=1800, 
         L=L, Wr=Wr, Wc=Wc, Ws = Ws,
         slobj=sslCrete)
-oTr = strc.perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
-tmp_res_Dic =ee.economics_for_SolarTrough(
+oTr = strc.perform_calc(Ib=Ib,hoy= hoy, Tr=Tr, alignment="NS")
+tmp_res_Dic = strc.financial_assessment(
         oTr= oTr,
+        ee = ee,
         csp_area_costs= csp_area_costs,
         csp_energy_price=csp_energy_price,
         csp_discount_rate= csp_discount_rate,
@@ -196,7 +198,7 @@ oTow = stc_opt.perform_calc(Ib,transmittance=1)
 strc_opt =  SolarTroughCalcs(foc_len=foc_len, N=N_opt_NS, 
         L=L, Wr=Wr, Wc=Wc, Ws = Ws,
         slobj=sslCrete)
-oTr = strc_opt.perform_calcs_NS(Ib=Ib,hoy= hoy, Tr=Tr)
+oTr = strc_opt.perform_calc(Ib=Ib,hoy= hoy, Tr=Tr, alignment="NS")
 
 #%%
 # pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', )
@@ -225,7 +227,7 @@ tmp_res_Dic =ee.economics_for_Combination(
 # A_helio_optEW = 125000
 # N_opt_EW = 800
 
-oTrEW = strc_opt.perform_calcs_EW(Ib=Ib,hoy= HOYS_DEFAULT, Tr=Tr)
+oTrEW = strc_opt.perform_calc(Ib=Ib,hoy= HOYS_DEFAULT, Tr=Tr, alignment="EW")
 combiEW = pd.merge(oTow.data_df, oTr.data_df, how="inner", on='HOY', suffixes=('_tow', '_tr'))
 combiEW['Power_MW'] = combiEW['Power_MW_tow'] + combiEW['Power_MW_tr']
 combiEW_xyz_np = np.vstack(combiEW['Power_MW'].values).reshape((365,24))

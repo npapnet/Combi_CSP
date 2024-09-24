@@ -62,8 +62,8 @@ sotr = SolarTroughCalcs(
         ,Wc = 5.76
         , slobj=sslCrete
         )
-oew = sotr.perform_calcs_EW(Ib=Ib, Tr=Tr)
-ons = sotr.perform_calcs_NS(Ib=Ib, Tr=Tr)
+oew = sotr.perform_calc(Ib=Ib, Tr=Tr, alignment='EW')
+ons = sotr.perform_calc(Ib=Ib, Tr=Tr, alignment='NS')
 #%%
 plt.plot(hoy, ons.data_df)#,xlim(100,600)
 plt.plot(hoy, oew.data_df)#,xlim(100,600)

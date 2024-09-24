@@ -6,7 +6,7 @@
 import pytest 
 import numpy as np
 # import CombiCSP.SolarGeometry as sgh
-import CombiCSP.Transmittance as cspTr
+import CombiCSP.transmittance as cspTr
 from CombiCSP import SolarSystemLocation
 
 @pytest.fixture

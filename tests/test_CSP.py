@@ -7,7 +7,7 @@
 import pytest 
 import numpy as np
 
-import CombiCSP.CSP as cspC
+import CombiCSP.obsolete.CSP as cspC
 from CombiCSP import SolarSystemLocation
 
 @pytest.fixture
