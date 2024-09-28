@@ -136,8 +136,32 @@ class SolarTowerCalcs():
             P = Qnet * self.nR * nG
         return P/1e6 # convert W to MW
 
-    # Incidence angle methods for towers
 
+    def calculate_nominal_power_MW(self, T_r_C=565, T_amb_C=15, transmittance=1, nG=0.97)->float:
+        """Calculates the nominal power of the solar tower
+
+        Args:
+            Tr_C (int, optional): the working fluid temperature in the receiver [oC] 565 oC 838K. Defaults to 565.
+            T_amb_C (int, optional): ambient temperature close to the receiver [oC] 15 oC 288K. Defaults to 15.
+            transmittance (int, optional): transmissivity. Defaults to 1.
+            nG (float, optional): Generator efficiency (TODO Crosscheck??). Defaults to 0.97
+
+        Returns:
+            float: nominal power in MW
+        """
+        Ib = 1000 # W/m2
+        T_r_C = 565
+        T_amb_C = 15
+        #TODO:  these formulas are power not energy
+        Qin = Ib*self.A_helio_m2 * self.reflectivity*transmittance * self.optical_efficiency/100
+        Qrad = self.epsilon * STEFAN_BOLTZMANN_CONSTANT * self.Ar_m2 * (CtoK(T_r_C)**4-CtoK(T_amb_C)**4)
+        hconv = CtoK(T_r_C)/60 + 5/3
+        Qconv = hconv * self.Ar_m2 * (CtoK(T_r_C) - CtoK(T_amb_C))
+        Qnet = self.alpha * Qin - Qrad - Qconv
+        return Qnet * self.nR * nG / 1e6 # convert W to MW
+
+
+    # Incidence angle methods for towers
     def IAM_tow(self, hoy:np.array=HOYS_DEFAULT)->np.array : 
         """Incidence angle modifier of Tower (azimuth)
 
@@ -190,6 +214,23 @@ class SolarTowerCalcs():
         A_helio = self.A_helio_m2 if A_helio is None else A_helio
         slobj = self._sl if slobj is None else slobj
         return SolarTowerCalcs(alt_ = alt, Ht_km=Ht, Ar_m2=Ar, A_helio_m2=A_helio, slobj=slobj)
+
+
+    def find_area_for_nominal_power(self, target_power_MW :float, T_r_C:float = 565)->float:
+        """finds the required area for the parameters of the solar tower
+
+        Args:
+            target_power_MW (float): target power in MW
+            T_r_C (float, optional): the working fluid temperature in the receiver [oC] 565 oC 838K. Defaults to 565.
+
+        Returns:
+            float: the area that produces the target power
+        """        
+        func = lambda x: np.abs(self.mutate(A_helio=x).calculate_nominal_power_MW(T_r_C=565,T_amb_C=15, transmittance=1, nG=0.97) - target_power_MW)
+        x0 = np.array(target_power_MW)
+        res = minimize(func, x0, method='nelder-mead',
+                    options={'xatol': 1e-4, 'disp': False})
+        return res.x[0]
 
     def find_area_for_max_MW(self, target_MW :float, 
             Ib, 

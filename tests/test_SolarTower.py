@@ -82,6 +82,34 @@ def test_perform_calcs_st2(st2, Ib):
 
 
 
+    
+
+def test_calculate_nominal_power(st2):
+    """ Test calculate_nominal_power functionality
+    
+    Args:
+        str (_type_): _description_
+    """
+    expected = 88.4828
+    res = st2.calculate_nominal_power_MW(Tr_C=565, T_amb_C=15, transmittance=1, nG=0.97)
+    assert res == pytest.approx(expected, abs=1e-1), "Nominal power is incorrect"
+
+    
+def test_find_area_for_nominalPower(st2):
+    """ Test calculate_nominal_power functionality
+    
+    Args:
+        sotr (_type_): _description_
+    """
+    expected = 128704.25
+    res = st2.find_area_for_nominal_power(target_power_MW=50, T_r_C=565)
+    assert res == pytest.approx(expected, abs=1e-1), "Nominal power is incorrect"
+
+    st2_opt = st2.mutate(A_helio=expected)
+    res_pow = st2_opt.calculate_nominal_power_MW(T_r_C=565, T_amb_C=15, transmittance=1, nG=0.97)
+    assert res_pow == pytest.approx(50, abs=1e-1), "Nominal power is incorrect"
+
+
 def test_find_area_for_maxMW(st2, Ib):
     """ Test find_area_for_maxMW functionality
     
@@ -91,6 +119,3 @@ def test_find_area_for_maxMW(st2, Ib):
     """    
     res = st2.find_area_for_max_MW(target_MW= 50, Ib= Ib,transmittance=1, nG=0.97)
     assert res == pytest.approx(212705.69, abs=0.05), "there is a problem with the optimisation"
-
-    
-
