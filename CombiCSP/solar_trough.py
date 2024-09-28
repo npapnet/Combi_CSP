@@ -36,7 +36,7 @@ class SolarTroughCalcs():
     alpha:float = 1 # absorptivity of the receiver
     nR:float = 0.375 # isentropic efficiency Salazar17
 
-    pwr_calculator = None # Class that calculates the power of the system based on alignment EW or NS
+    alignment_calculator = None # Class that calculates the power of the system based on alignment EW or NS
 
     def __init__(self,
         foc_len = 0.88 
@@ -147,15 +147,15 @@ class SolarTroughCalcs():
         assert alignment in ['EW', 'NS'], 'Alignement should be one of ["EW", "NS"]'
         self._system_alignment = alignment
         if alignment == 'NS':
-            self.pwr_calculator = SolarTroughNS(self)
+            self.alignment_calculator = SolarTroughNS(self)
         elif alignment == 'EW':
-            self.pwr_calculator = SolarTroughEW(self) 
+            self.alignment_calculator = SolarTroughEW(self) 
         else:
             raise Exception('Alignement should be one of ["EW", "NS"]')
         
     def perform_calc(self, alignment:str, Ib, Tr=318, hoy=HOYS_DEFAULT)->OutputContainer:
         self.set_alignment(alignment)
-        return self.pwr_calculator.perform_calcs(Ib=Ib, Tr=Tr, hoy=hoy)
+        return self.alignment_calculator.perform_calcs(Ib=Ib, Tr=Tr, hoy=hoy)
 
     def params_as_dict(self):
         dic = {
@@ -168,7 +168,11 @@ class SolarTroughCalcs():
             'area_m2':self.area,
             'Ac_m2':self.Ac(),
             'Ar_m2':self.Ar(),
-            'Cg':self.Cg
+            'Cg':self.Cg,
+            'optical_efficiency':self.optical_efficiency,
+            'epsilon':self.epsilon,
+            'alpha':self.alpha,
+            'nR':self.nR
         }
         return dic
 
@@ -232,7 +236,7 @@ class SolarTroughCalcs():
         if alignment is not None:
             self.set_alignment(alignment)
         
-        cos_thetas = self.pwr_calculator.costhetai(hoy)
+        cos_thetas = self.alignment_calculator.costhetai(hoy)
         return Ib*self.IAM_tro(hoy) *cos_thetas
 
     def di_sst(self, hoy, Ib, costhetai, Tr, nG:float = 0.97
@@ -286,6 +290,30 @@ class SolarTroughCalcs():
             P = Qnet * self.nR * nG
         return P/1e6 # convert W to MW
 
+    def calculate_nominal_power_MW(self, Tr:float=318, T_amb:float=15, nG:float= 0.97)->pd.Series:
+        """
+        Calculates the nominal power of the solar trough system
+
+        The nominal power in calculated based on:
+        - the normal irradiance Ib set to 1000 W/m2 
+        - the working fluid temperature in the receiver Tr (Tr)
+        - the ambient temperature T_amb (T_amb) set to 318
+        - the generator efficiency nG (self.nG) set to 15 C
+        - the optical efficiency of the collector (self.optical_efficiency)
+        """
+        Ib = 1000 # [W/m2] beam irradiance
+        # Tr = 318 # [oC] the working fluid temperature in the receiver, 350oC at DISS pp.3,7 in Zarza04
+        # T_amb = 15 # [oC] ambient temperature close to the receiver 15 oC 288K
+        # hoy = HOYS_DEFAULT
+
+        Q_in = self.Ac()*self.optical_efficiency/100 * Ib
+        Qrad = self.epsilon * STEFAN_BOLTZZMAN_CONSTANT * self.Ar() * (CtoK(Tr)**4-CtoK(T_amb)**4) # check model from Broesamle    
+        Q_conv = 0
+        Q_net = self.alpha * Q_in - Qrad - Q_conv
+        P_MW = Q_net * self.nR * nG /1e6
+        return P_MW
+
+ 
         
     def mutate(self,foc_len = None 
         ,N = None 
@@ -325,11 +353,28 @@ class SolarTroughCalcs():
             , slobj=  slobj
                                 )
 
+    def find_no_units_for_nominal_power_MW(self,
+        target_MW :float,
+        Tr=318.)->int:
+        """finds the required area based on the other parameters of the solar trough
+
+        Ib: 1000 W/m2
+        Tr: 318oC
+        T_amb: 15oC
+        nG: 0.97
+        """
+        func = lambda x: np.abs(self.mutate(N=x).calculate_nominal_power_MW(Tr=318, T_amb=15, nG= 0.97) - target_MW)
+        x0 = np.array(self.N) # initial value
+        res = minimize(func, x0, method='nelder-mead',
+                    options={'xatol': 1e-4, 'disp': False})
+        return np.ceil(res.x[0])
+    
+    
     def find_units_for_max_MW(self, 
         target_MW :float,
         alignment:str, 
         Ib:pd.Series, 
-        Tr=318., hoy=HOYS_DEFAULT)->float:
+        Tr=318., hoy=HOYS_DEFAULT)->int:
         """finds the required number of units based on the other parameters of the solar trough
 
         Args:
@@ -340,14 +385,14 @@ class SolarTroughCalcs():
             hoy (_type_, optional): _description_. Defaults to HOYS_DEFAULT.
         
         returns:
-            (float) : The area that produces the target MW
-        """  
+            (int) : The area that produces the target MW
+        """
 
         func = lambda x: np.abs(self.mutate(N=x).perform_calc(alignment=alignment, Ib=Ib, Tr=Tr).PowerMax_MW - target_MW)
         x0 = np.array(self.N) # initial value 
         res = minimize(func, x0, method='nelder-mead',
                     options={'xatol': 1e-4, 'disp': False})
-        return res.x[0]
+        return np.ceil(res.x[0])
 
 
     def financial_assessment(self, 

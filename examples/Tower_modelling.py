@@ -143,7 +143,7 @@ stc_fin
 # %%
 stc_fin.keys()
 # %%
-stc_fin['cash_flow']
+stc_fin['cash_flow_df']
 # %%
 stc_fin['scenario_financial']
 # %%

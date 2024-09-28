@@ -117,18 +117,39 @@ def test_incident_energy_EW(sotr, Ib):
 
 
 
-
-
 def test_find_units_for_maxMW(sotr, Ib):
     """ Test find_area_for_maxMW functionality
     
     Args:
         st2 (_type_): _description_
         Ib (_type_): _description_
-    """    
+    """
+    expected = 1385 #1384.88
     resEW = sotr.find_units_for_max_MW(target_MW= 50, alignment='EW', Ib= Ib,Tr=318)
-    assert resEW == pytest.approx(1384.88, abs=0.05), "there is a problem with the optimisation"
+    assert resEW == pytest.approx(expected , abs=0.05), "there is a problem with the optimisation"
 
+    expected = 1445 #1444.65
     resNS = sotr.find_units_for_max_MW(target_MW= 50, alignment='NS', Ib= Ib,Tr=318)
-    assert resNS == pytest.approx(1444.65, abs=0.05), "there is a problem with the optimisation"
+    assert resNS == pytest.approx(expected, abs=0.05), "there is a problem with the optimisation"
 
+
+def test_calculate_nominal_power(sotr):
+    """ Test calculate_nominal_power functionality
+    
+    Args:
+        sotr (_type_): _description_
+    """
+    expected = 63.227
+    res = sotr.calculate_nominal_power_MW(Tr=318, T_amb=15, nG=0.97)
+    assert res == pytest.approx(expected, abs=1e-1), "Nominal power is incorrect"
+
+    
+def test_find_no_of_units_for_nominalPower (sotr):
+    """ Test calculate_nominal_power functionality
+    
+    Args:
+        sotr (_type_): _description_
+    """
+    expected = 1424
+    res = sotr.find_no_units_for_nominal_power_MW(target_MW=50, Tr=318)
+    assert res == pytest.approx(expected, abs=1e-1), "Nominal power is incorrect"

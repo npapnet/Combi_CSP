@@ -104,7 +104,9 @@ _a = oew.data_df
 _a['hod']  = _a.HOY % 24
 _a.head(30)
 plt.plot(_a.hod, _a.Power_MW, '.')
-
+plt.xlabel('Hour of Day')       
+plt.ylabel('Power (MW)')        
+plt.grid()
 
 # %% [markdown]
 """
@@ -115,6 +117,8 @@ The following code block demonstrates the power output of a  solar Trough vs the
 # %%
 # plot a bivariate kde for x hour of data, y power
 sns.kdeplot(x=_a.hod, y=_a.Power_MW, cmap='viridis', fill=True, cbar=True)
+plt.xlabel('Hour of Day')
+plt.ylabel('Power (MW)')
 
 # %% [markdown]
 """
@@ -187,3 +191,27 @@ stc_fin['cash_flow_df']
 # %%
 stc_fin['scenario_financial']
 # %%
+
+sotr.params_as_dict()
+#%% [markdown]
+"""
+# Solar trough find nominal power 
+
+This uses some function that are used to estimate the nominal power
+of the power plant given:
+
+- a set irradiance of 1000 W/m2
+- the parameters of the power plant. (efficiency numbers etc)
+
+It uses radiative losses and efficiency of the plant.
+
+It ignores IAM and cos(theta).
+
+The result is the number of solar troughs required to reach the nominal power.
+"""
+#%%
+target_power = 50
+Nopt = sotr.find_no_units_for_nominal_power_MW(target_power)
+print(f"No of troughs for {target_power} MW: {Nopt}")
+sotr_50MW = sotr.mutate(N=Nopt)
+print(f" Nominal power for {Nopt}: {sotr_50MW.calculate_nominal_power_MW():.5g} MW")

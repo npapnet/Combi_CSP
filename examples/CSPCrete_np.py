@@ -65,12 +65,14 @@ sotr = SolarTroughCalcs(
 oew = sotr.perform_calc(Ib=Ib, Tr=Tr, alignment='EW')
 ons = sotr.perform_calc(Ib=Ib, Tr=Tr, alignment='NS')
 #%%
-plt.plot(hoy, ons.data_df)#,xlim(100,600)
-plt.plot(hoy, oew.data_df)#,xlim(100,600)
+plt.plot(hoy, ons.data_df['Power_MW'])#,xlim(100,600)
+plt.plot(hoy, oew.data_df['Power_MW'])#,xlim(100,600)
 plt.xlabel('Time (hour of year)')
 plt.ylabel('Power (MW)')
 plt.legend(('EW','NS'))
 plt.title('Trough')
+plt.xlim(2400,2423)
+#%%
 #xlim(0,87.60), ylim(0,80)
 #np.savetxt('datah.txt',datah.T ,delimiter=',') #save transposed data
 #np.savetxt('dataxyz.txt',datah.T ,delimiter=',') #save tro_xyz data

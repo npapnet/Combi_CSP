@@ -115,7 +115,7 @@ class SolarTowerCalcs():
         ReceiverArea = self.Ar_m2
         
         # Incident energy on the receiver
-        Qin = Ib * self.reflectivity * Trans * IAM * Heliostat_area * self.optical_efficiency/100 # Eq. 17  in McGovern12
+        Qin = Ib * Heliostat_area* self.reflectivity * Trans* self.optical_efficiency/100  * IAM   # Eq. 17  in McGovern12
         
         # Thermal energy radiated by the receiver
         Qrad = self.epsilon * STEFAN_BOLTZMANN_CONSTANT * ReceiverArea * (CtoK(Trec_Celcius)**4-CtoK(Ta_Celcius)**4)
